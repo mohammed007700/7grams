@@ -107,6 +107,9 @@ td.od.z{color:var(--muted)}
 .pcap .need{font-size:12.5px;color:var(--bad);font-weight:600}
 .pth{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
 .pdfpg{width:100%;border:1px solid var(--line);border-radius:10px;cursor:zoom-in;display:block}
+.dsel{display:flex;gap:6px;min-width:0}
+.dsel select{flex:1 1 0;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:var(--bg)}
+.dsel select[data-dp="m"]{flex:1.6 1 0}
 .cm{padding:10px 0;border-bottom:1px solid var(--line)}
 .cm:last-child{border-bottom:0}
 .cm .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
@@ -419,6 +422,7 @@ const EN = {
 "تعديل بيانات الموظف":"Edit employee data","رجوع للقائمة":"Back to list","استيراد بيانات الموظفين":"Import employee data","لم أجد موظفين في الملف. راجع ربط الأعمدة.":"No employees found in the file. Check the column matching.","تم حفظ {n} موظف ({u} تحديث).":"Saved {n} staff ({u} updated).",
 "جارٍ تجهيز الملف…":"Preparing the file…","تعذّر قراءة ملف PDF.":"Couldn't read the PDF file.","تعذّر حفظ الملف. قد تكون المساحة ممتلئة.":"Couldn't save the file. Storage may be full.","تم رفع الملف ({n} صفحة).":"File uploaded ({n} pages).","تم رفع أول {n} صفحة من الملف.":"Uploaded the first {n} pages of the file.",
 "اكتب اسم الموظف.":"Enter the employee name.","تم حفظ بيانات الموظف.":"Employee data saved.","تم حذف الملف.":"File deleted.",
+"اليوم":"Day","الشهر":"Month","السنة":"Year",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -445,6 +449,17 @@ const mkOf = (y,m) => `${y}-${pad(m)}`;
 const todayKey = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 const dim = mk => { const [y,m] = mk.split("-").map(Number); return new Date(y,m,0).getDate(); };
 const mLabel = mk => { const [y,m] = mk.split("-").map(Number); return `${MONTHS[LANG][m-1]} ${y}`; };
+/* date picker built from three dropdowns, so it follows the app language and direction instead of the phone's */
+function dateSel(id,val,attrs,yFrom,yTo){ const p=/^\d{4}-\d{2}-\d{2}$/.test(val||"")?val.split("-").map(Number):[0,0,0], Y=now.getFullYear(), y0=yFrom||1950, y1=yTo||Y+15;
+  const opt=(v,t,sel)=>`<option value="${v}" ${sel?"selected":""}>${t}</option>`;
+  let dd=opt("",T("اليوم"),!p[2]); for(let i=1;i<=31;i++) dd+=opt(i,i,p[2]===i);
+  let mm=opt("",T("الشهر"),!p[1]); MONTHS[LANG].forEach((n,i)=>{ mm+=opt(i+1,n,p[1]===i+1); });
+  let yy=opt("",T("السنة"),!p[0]); for(let i=y1;i>=y0;i--) yy+=opt(i,i,p[0]===i);
+  return `<span class="dsel" data-for="${id}"><select data-dp="d" aria-label="${T("اليوم")}">${dd}</select><select data-dp="m" aria-label="${T("الشهر")}">${mm}</select><select data-dp="y" aria-label="${T("السنة")}">${yy}</select></span><input type="hidden" id="${id}" ${attrs||""} value="${esc(val||"")}">`; }
+document.addEventListener("change",e=>{ const t=e.target; if(!t.dataset||!t.dataset.dp) return; const box=t.closest(".dsel"), hid=box&&document.getElementById(box.dataset.for); if(!hid) return;
+  const g=k=>+box.querySelector(`[data-dp="${k}"]`).value||0, y=g("y"), m=g("m"); let d=g("d");
+  if(y&&m&&d){ const mx=new Date(y,m,0).getDate(); if(d>mx){ d=mx; box.querySelector('[data-dp="d"]').value=d; } hid.value=`${y}-${pad(m)}-${pad(d)}`; } else hid.value="";
+  hid.dispatchEvent(new Event("change",{bubbles:true})); },true);
 const shiftMonth = (mk,d) => { let [y,m] = mk.split("-").map(Number); m+=d; while(m<1){m+=12;y--} while(m>12){m-=12;y++} return mkOf(y,m); };
 const normDigits = s => String(s).replace(/[٠-٩]/g,c=>"٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/[۰-۹]/g,c=>"۰۱۲۳۴۵۶۷۸۹".indexOf(c)).replace(/٫/g,".").replace(/٬/g,",");
 function toNum(v){
@@ -807,7 +822,7 @@ function revAdmin(b,names){
       <div class="field" style="flex-basis:200px"><label for="cmBranch">${T("اسم الفرع")}</label><input id="cmBranch" list="brList" value="${esc(b||"")}"></div>
       <div class="field" style="flex:0 1 110px"><label for="cmStars">${T("النجوم")}</label><select id="cmStars">${[5,4,3,2,1].map(n=>`<option value="${n}">${n} ★</option>`).join("")}</select></div>
       <div class="field"><label for="cmAuthor">${T("اسم صاحب التعليق")} ${T("(اختياري)")}</label><input id="cmAuthor"></div>
-      <div class="field" style="flex:0 1 160px"><label for="cmDate">${T("تاريخ التعليق")}</label><input id="cmDate" type="date" value="${todayKey}"></div></div>
+      <div class="field" style="flex:0 1 250px"><label for="cmDate">${T("تاريخ التعليق")}</label>${dateSel("cmDate",todayKey,"",now.getFullYear()-3,now.getFullYear())}</div></div>
       <div class="field" style="margin-top:10px"><label for="cmText">${T("نص التعليق")}</label><textarea id="cmText"></textarea></div>
       <div class="row" style="margin-top:10px"><button class="btn pri" data-act="addComment">${T("إضافة تعليق")}</button></div></div>`;
   h+=`<div class="card soft"><div class="card-h"><h2>${T("إعدادات التقييمات")}</h2><span class="note">${T("تُحفظ الروابط مرة واحدة وتبقى.")}</span></div>
@@ -1021,7 +1036,7 @@ function vTeam(){
   const cfg=teamCfg(b), dt=dayTarget(b), docs=allEmp();
   const dayDocs=Object.keys(docs).map(k=>Object.assign({id:k},docs[k])).filter(d=>d.branch===b&&d.date===S.teamDate);
   const ach=sh=>dayDocs.filter(d=>d.shift===sh).reduce((x,d)=>x+(+d.total||0),0);
-  h+=`<div class="card"><div class="row" style="align-items:flex-end"><div class="field" style="flex:0 1 170px"><label for="tmDate">${T("التاريخ")}</label><input id="tmDate" type="date" value="${esc(S.teamDate)}"></div>
+  h+=`<div class="card"><div class="row" style="align-items:flex-end"><div class="field" style="flex:0 1 250px"><label for="tmDate">${T("التاريخ")}</label>${dateSel("tmDate",S.teamDate,"",now.getFullYear()-2,now.getFullYear()+1)}</div>
     <div><div class="note" style="margin-bottom:4px">${T("الشفت")}</div><div class="seg">${SHIFTS.map(([k,t])=>`<button data-tshift="${k}" class="${S.teamShift===k?"on":""}">${T(t)}</button>`).join("")}</div></div></div></div>`;
   if (!dt) h+=`<div class="banner" style="margin:0">${T("حدد تارقت الفرع من قسم المبيعات ليُحسب تارقت الموظفين.")}</div>`;
   h+=`<div class="grid g3">${kpi(T("تارقت الفرع اليوم"),dt?money(dt)+SAR():"—",T("الباقي على التارقت ÷ الأيام الباقية"))}${kpi(T("تارقت الشفت الصباحي"),dt?money(shiftTarget(b,"m"))+SAR():"—",T("المحقق: {v}",{v:money(ach("m"))}))}${kpi(T("تارقت الشفت الليلي"),dt?money(shiftTarget(b,"n"))+SAR():"—",T("المحقق: {v}",{v:money(ach("n"))}))}</div>`;
@@ -1260,7 +1275,7 @@ function openTask(b,id){ const def=TASK_DEFS.find(d=>d.id===id); if(!def) return
 function vTasks(){
   const a=isAdmin(), b=selBranch(), docs=allTasks();
   let h=`<h1>${T("المهام اليومية")}</h1><p class="sub">${T("مهام كل شفت داخل الفرع، مع تنبيه فوري لأي قراءة غير صحيحة وحلها")}${b?" · "+esc(b):""}</p><div class="stack">`;
-  h+=`<div class="card"><div class="row" style="align-items:flex-end"><div class="field" style="flex:0 1 170px"><label for="tmDate">${T("التاريخ")}</label><input id="tmDate" type="date" value="${esc(S.teamDate)}"></div>
+  h+=`<div class="card"><div class="row" style="align-items:flex-end"><div class="field" style="flex:0 1 250px"><label for="tmDate">${T("التاريخ")}</label>${dateSel("tmDate",S.teamDate,"",now.getFullYear()-2,now.getFullYear()+1)}</div>
     <div><div class="note" style="margin-bottom:4px">${T("الشفت")}</div><div class="seg">${SHIFTS.map(([k,t])=>`<button data-tshift="${k}" class="${S.teamShift===k?"on":""}">${T(t)}</button>`).join("")}</div></div>${a&&S.dl?`<button class="btn" data-act="dlTasks">${T("تنزيل سجل المهام Excel")}</button>`:""}</div></div>`;
   const defs=shiftTasks(S.teamShift);
   if (!b) {
@@ -1388,7 +1403,7 @@ function empCard(e,edit){
   return h;
 }
 function empForm(e){
-  return `<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2></div>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label><input id="ef-${f.k}" data-ef="${f.k}" type="${f.t==="date"?"date":f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}"></div>`).join("")}</div>`).join("")}
+  return `<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2></div>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label>${f.t==="date"?dateSel("ef-"+f.k,e[f.k]||"",`data-ef="${f.k}"`,f.k==="dob"?1940:now.getFullYear()-30,now.getFullYear()+15):`<input id="ef-${f.k}" data-ef="${f.k}" type="${f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}">`}</div>`).join("")}</div>`).join("")}
     <div class="field" style="margin-top:12px"><label for="ef-notes">${T("ملاحظات")} ${T("(اختياري)")}</label><textarea id="ef-notes" data-ef="notes">${esc(e.notes||"")}</textarea></div>
     <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveEmp2">${T("حفظ")}</button><button class="btn" data-act="cancelEmp">${T("إلغاء")}</button></div></div>`;
 }
