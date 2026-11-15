@@ -435,6 +435,8 @@ const EN = {
 "الفروع":"Branches","اسم فرع جديد":"New branch name","إضافة فرع":"Add branch","تمت إضافة الفرع.":"Branch added.","هذا الفرع موجود.":"This branch already exists.","اكتب اسم الفرع.":"Enter the branch name.","تم حذف الفرع من القائمة.":"Branch removed from the list.",
 "حذف الفرع من القائمة ما يحذف بياناته.":"Removing a branch from the list does not delete its data.",
 "تعذّر حفظ صفحات الملف ({c}).":"Couldn't save the file pages ({c}).","تعذّر تحميل المستندات ({c}).":"Couldn't load the documents ({c}).","تم حفظ الموظف مع {n} صفحة من الملف.":"Employee saved with {n} page(s) of the file.","لم يُرفق ملف لأن قراءة PDF تعذّرت ({c}).":"No file attached because the PDF could not be read ({c}).",
+"يوجد {n} موظف في فروع أخرى أو بدون فرع.":"{n} staff are in other branches or have no branch.","عرض كل الفروع":"Show all branches","بدون فرع":"No branch",
+"لا يوجد ملف مرتبط بإيميلك: {e}":"No file is linked to your email: {e}","المدير يربط ملفك بإضافة هذا الإيميل في خانة البريد الإلكتروني داخل ملفك.":"Your manager links your file by entering this email in the Email field of your file.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1428,7 +1430,7 @@ function vProfile(){
   const a=isAdmin();
   if (!a){ const e=myEmployee();
     let h=`<h1>${T("بياناتي")}</h1><p class="sub">${T("ملفك الوظيفي كما هو مسجل لدى الإدارة")}</p><div class="stack">`;
-    if (!e) return h+`<div class="card soft empty"><b>${T("لم تُضف بياناتك بعد")}</b>${T("تواصل مع المدير لإضافة ملفك.")}</div></div>`;
+    if (!e) return h+`<div class="card soft empty"><b>${T("لم تُضف بياناتك بعد")}</b>${T("لا يوجد ملف مرتبط بإيميلك: {e}",{e:`<bdi dir="ltr">${esc(S.email)}</bdi>`})}<br>${T("المدير يربط ملفك بإضافة هذا الإيميل في خانة البريد الإلكتروني داخل ملفك.")}</div></div>`;
     return h+empCard(e,false)+"</div>"; }
   if (S.empEdit) return `<h1>${T("ملفات الموظفين")}</h1><div class="stack">${empForm(S.empEdit)}</div>`;
   const list=Object.keys(S.employees).map(k=>Object.assign({id:k},S.employees[k]));
@@ -1441,7 +1443,7 @@ function vProfile(){
     <p class="note" style="margin:10px 0 0">${T("ملفات PDF تُقرأ تلقائياً وتتعبأ منها بيانات الموظف (الاسم، الرقم، الجنسية، الهوية، الشهادة الصحية، الجوال، الإيميل، التواريخ...) مع صورته، ثم تراجعها وتحفظ. تقدر تختار عدة ملفات.")}</p>
     <p class="note" style="margin:6px 0 0">${T("ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».")}</p></div>`;
   if (alerts.length) h+=`<div class="card"><div class="card-h"><h2>${T("وثائق قاربت على الانتهاء")}</h2><span class="pill bad">${N(alerts.length)}</span></div>${alerts.map(x=>`<button class="trow" data-emp="${esc(x.e.id)}"><span class="tt"><b>${esc(x.e.name||"")}</b><span class="note">${esc(x.e.branch||"")}</span></span><span class="row" style="justify-content:flex-end">${x.a.map(expPill).join("")}</span></button>`).join("")}</div>`;
-  h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}</div>`;
+  h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${" · "+esc(e.branch||T("بدون فرع"))}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}${b&&list.length>shown.length&&!qv?`<div class="row" style="margin-top:12px"><span class="note">${T("يوجد {n} موظف في فروع أخرى أو بدون فرع.",{n:N(list.length-shown.length)})}</span><button class="btn sm" data-br="">${T("عرض كل الفروع")}</button></div>`:""}</div>`;
   return h+"</div>";
 }
 async function importEmployees(m,rows,file){
