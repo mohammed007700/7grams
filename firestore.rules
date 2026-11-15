@@ -1,5 +1,4 @@
 rules_version = '2';
-// 7 GRAMS: قواعد الحماية. غيّر osopp2016@gmail.com إلى إيميل المدير الأساسي (نفس OWNER_EMAIL في firebase-config.js).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null && request.auth.token.email != null; }
@@ -13,33 +12,28 @@ service cloud.firestore {
     function mine() { return isStaff() && resource != null && resource.data.branch == myBranch(); }
     function writesMine() { return isStaff() && request.resource.data.branch == myBranch() && (resource == null || resource.data.branch == myBranch()); }
 
-    // حسابات الموظفين: المدير يدير الكل، والموظف يقرأ سجله فقط
     match /members/{id} {
       allow read: if isAdmin() || (signedIn() && id == email());
       allow write: if isAdmin();
     }
-    // بيانات مشتركة لكل من له حساب: الإعدادات، الأسعار، تحليل القائمة
     match /settings/{id} { allow read: if isAdmin() || isStaff(); allow write: if isAdmin(); }
     match /prices/{id}   { allow read: if isAdmin() || isStaff(); allow write: if isAdmin(); }
     match /menu/{id}     { allow read, write: if isAdmin(); }
     match /menub/{id}    { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
-    // بيانات كل الفروع مجتمعة: للمدير فقط
     match /sales/{id} { allow read, write: if isAdmin(); }
     match /waste/{id} { allow read, write: if isAdmin(); }
-    // بيانات لكل فرع: الموظف يقرأ فرعه فقط، والكتابة للمدير
     match /salesb/{id}   { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     match /wasteb/{id}   { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     match /orders/{id}   { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     match /staff/{id}    { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     match /reviews/{id}  { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     match /comments/{id} { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
-    // ما يدخله الموظف لفرعه: الستوك، مبيعاته، المهام، صور المهام
     match /stock/{id}    { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /empsales/{id} { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /tasklog/{id}  { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /taskpics/{id} { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
-    // ملفات الموظفين: كل موظف يقرأ ملفه فقط (حسب إيميله)، والمدير يدير الكل
     match /employees/{id} { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
     match /empdocs/{id}   { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
   }
 }
+
