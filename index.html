@@ -1412,9 +1412,15 @@ function expAlerts(e){ return EF.filter(f=>f.x&&e[f.k]).map(f=>({f,d:daysTo(e[f.
 const expPill = a => a.d<0 ? `<span class="pill bad">${esc(L(a.f.l))}: ${T("منتهية")}</span>` : `<span class="pill ${a.d<=30?"bad":"warn"}">${esc(L(a.f.l))}: ${T("تنتهي خلال {n} يوم",{n:N(a.d)})}</span>`;
 function serviceText(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||"")) return ""; const a=new Date(v), b=new Date(todayKey); let m=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()<a.getDate()) m--; if(m<0) return ""; return T("{y} سنة و{m} شهر",{y:N(Math.floor(m/12)),m:N(m%12)}); }
 function myEmployee(){ const em=S.email; return Object.keys(S.employees).map(k=>Object.assign({id:k},S.employees[k])).find(e=>String(e.email||"").toLowerCase()===em)||null; }
-function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsFor=e.id; S.empdocs=null;
+let DOCS_UNSUB=null;
+function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsFor=e.id; S.empdocs=null; if(DOCS_UNSUB){ try{ DOCS_UNSUB(); }catch(x){} DOCS_UNSUB=null; }
+  const want=String(e.email||"").toLowerCase();
   const q=S.admin ? S.db.collection("empdocs").where("emp","==",e.id) : S.db.collection("empdocs").where("email","==",S.email);
-  q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; S.docsErr=""; render(); }).catch(err=>{ S.empdocs=[]; S.docsErr=(err&&err.code)||"error"; render(); }); }
+  /* live, so a certificate uploaded by the manager shows on the employee's phone without reopening the app */
+  DOCS_UNSUB=q.onSnapshot(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id,_ref:d.ref},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.kind==="hc"?0:1)-(y.kind==="hc"?0:1)||(x.file||"").localeCompare(y.file||"")||(x.page-y.page));
+    /* pages saved while the file had another email are invisible to the employee: the manager's view repairs them */
+    if(S.admin&&want) list.forEach(d=>{ if(String(d.email||"").toLowerCase()!==want&&d._ref&&d._ref.update) d._ref.update({email:want}).catch(()=>{}); });
+    S.empdocs=list; S.docsErr=""; render(); }, err=>{ S.empdocs=[]; S.docsErr=(err&&err.code)||"error"; render(); }); }
 function empCard(e,edit){
   const al=expAlerts(e), sv=serviceText(e.hire);
   let h=`<div class="card"><div class="card-h"><div class="row" style="flex-wrap:nowrap;align-items:center">${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:64px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none">`:""}<div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upHc">${T("رفع الشهادة الصحية")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
