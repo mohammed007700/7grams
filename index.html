@@ -260,6 +260,7 @@ nav.tabs button.on::before{content:"";position:absolute;top:-1px;width:28px;heig
 <input type="file" id="filePrice" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="fileEmpXls" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="fileEmpPdf" accept="application/pdf,.pdf" hidden>
+<input type="file" id="fileHc" accept="application/pdf,.pdf,image/*" hidden>
 <input type="file" id="fileEmpPdfs" accept="application/pdf,.pdf" multiple hidden>
 <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast" role="status"></div>
@@ -437,6 +438,10 @@ const EN = {
 "تعذّر حفظ صفحات الملف ({c}).":"Couldn't save the file pages ({c}).","تعذّر تحميل المستندات ({c}).":"Couldn't load the documents ({c}).","تم حفظ الموظف مع {n} صفحة من الملف.":"Employee saved with {n} page(s) of the file.","لم يُرفق ملف لأن قراءة PDF تعذّرت ({c}).":"No file attached because the PDF could not be read ({c}).",
 "يوجد {n} موظف في فروع أخرى أو بدون فرع.":"{n} staff are in other branches or have no branch.","عرض كل الفروع":"Show all branches","بدون فرع":"No branch",
 "لا يوجد ملف مرتبط بإيميلك: {e}":"No file is linked to your email: {e}","المدير يربط ملفك بإضافة هذا الإيميل في خانة البريد الإلكتروني داخل ملفك.":"Your manager links your file by entering this email in the Email field of your file.",
+"هذا الإيميل غير مضاف كحساب دخول، فالموظف ما راح يشوف ملفه. أضفه من الثلاث نقاط أو اختر إيميل حسابه من القائمة.":"This email is not added as a sign-in account, so the employee will not see their file. Add it from the three dots, or pick their account email from the list.",
+"مرتبط بحساب الدخول: {n}":"Linked to sign-in account: {n}","الإيميل هو اللي يربط الملف بحساب الموظف.":"The email is what links the file to the employee's account.",
+"الشهادة الصحية":"Health certificate","رفع الشهادة الصحية":"Upload health certificate","لا توجد شهادة صحية مرفوعة.":"No health certificate uploaded.","تم رفع الشهادة الصحية.":"Health certificate uploaded.","تعذّر رفع الشهادة ({c}).":"Couldn't upload the certificate ({c}).","مستندات أخرى":"Other documents",
+"تم ربط ملف الموظف «{n}» بهذا الحساب.":"The employee file \"{n}\" was linked to this account.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -631,6 +636,11 @@ function reviewSummary(){
   return {g,rows,cnt,avg,last:rows.reduce((a,x)=>x.r.date>a?x.r.date:a,"")};
 }
 const DEF_BRANCHES=["B02 - Dammam Cornish","B09 - Saihat","B17 - Drive Thru - Tarot","B20 - Drive Thru - Mazruaya"];
+const DEF_BR_ALIAS={"سيهات":"B09 - Saihat","صيهات":"B09 - Saihat","المزروعيه":"B20 - Drive Thru - Mazruaya","مزروعيه":"B20 - Drive Thru - Mazruaya","تاروت":"B17 - Drive Thru - Tarot","كورنيشالدمام":"B02 - Dammam Cornish","الدمامالكورنيش":"B02 - Dammam Cornish","الدمام":"B02 - Dammam Cornish"};
+function mapBranch(raw){ if(!raw) return ""; const brs=allBranches(), k=canonKey(raw), a=(S.settings.branchAlias||{})[k]; if(a) return a;
+  const ex=brs.find(b=>canonKey(b)===k); if(ex) return ex; const n=arNorm(raw);
+  for(const key of Object.keys(DEF_BR_ALIAS)){ const kk=arNorm(key); if((n.includes(kk)||kk.includes(n))&&n.length>=3&&brs.includes(DEF_BR_ALIAS[key])) return DEF_BR_ALIAS[key]; }
+  const lat=brs.find(b=>b.toLowerCase().split(/[^a-z]+/).some(w=>w.length>=4&&String(raw).toLowerCase().includes(w))); return lat||""; }
 const branchList = () => Array.isArray(S.settings.branches) ? S.settings.branches : DEF_BRANCHES;
 function allBranches(){
   const s=new Set(branchList()), hidden=new Set(S.settings.hiddenBranches||[]);
@@ -1407,7 +1417,7 @@ function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsF
   q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; S.docsErr=""; render(); }).catch(err=>{ S.empdocs=[]; S.docsErr=(err&&err.code)||"error"; render(); }); }
 function empCard(e,edit){
   const al=expAlerts(e), sv=serviceText(e.hire);
-  let h=`<div class="card"><div class="card-h"><div class="row" style="flex-wrap:nowrap;align-items:center">${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:64px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none">`:""}<div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
+  let h=`<div class="card"><div class="card-h"><div class="row" style="flex-wrap:nowrap;align-items:center">${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:64px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none">`:""}<div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upHc">${T("رفع الشهادة الصحية")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
   if (al.length) h+=`<div class="row" style="margin-bottom:12px">${al.map(expPill).join("")}</div>`;
   if (sv) h+=`<div class="grid g3" style="margin-bottom:12px">${kpi(T("مدة الخدمة"),sv)}${e.hcexp?kpi(T("انتهاء الشهادة الصحية"),esc(fmtDate(e.hcexp))):""}${e.idexp?kpi(T("انتهاء الهوية / الإقامة"),esc(fmtDate(e.idexp))):""}</div>`;
   EG.forEach(([g,gl])=>{ const fs=EF.filter(f=>f.g===g&&e[f.k]); if(!fs.length) return;
@@ -1416,12 +1426,18 @@ function empCard(e,edit){
   h+=`</div>`;
   loadDocs(e);
   const docs=S.empdocs;
-  h+=`<div class="card"><div class="card-h"><h2>${T("المستندات")}</h2>${docs&&docs.length?`<span class="note num">${docs.length}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:docs.length?`<div class="stack">${docs.map(d=>`<figure style="margin:0"><img class="pdfpg" data-pg="${esc(d.id)}" alt="${esc(d.file||"")} ${d.page}" src="${esc(d.img)}"><figcaption class="note">${esc(d.file||"")} · ${T("صفحة {n}",{n:N(d.page)})}${edit?` <button class="btn sm" data-act="delEmpDoc" data-file="${esc(d.file||"")}">${T("حذف الملف")}</button>`:""}</figcaption></figure>`).filter((x,i,arr)=>true).join("")}</div>`:`<p class="note" style="margin:0">${S.docsErr?`<span style="color:var(--bad)">${T("تعذّر تحميل المستندات ({c}).",{c:esc(S.docsErr)})}</span>`:T("لا توجد مستندات مرفوعة.")}</p>`}</div>`;
+  const docItem=d=>`<figure style="margin:0"><img class="pdfpg" data-pg="${esc(d.id)}" alt="${esc(d.file||"")} ${d.page}" src="${esc(d.img)}"><figcaption class="note">${esc(d.file||"")} · ${T("صفحة {n}",{n:N(d.page)})}${edit?` <button class="btn sm" data-act="delEmpDoc" data-file="${esc(d.file||"")}">${T("حذف الملف")}</button>`:""}</figcaption></figure>`;
+  const hc=(docs||[]).filter(d=>d.kind==="hc"), other=(docs||[]).filter(d=>d.kind!=="hc");
+  h+=`<div class="card"><div class="card-h"><h2>${T("الشهادة الصحية")}</h2>${e.hcexp?`<span class="note">${T("انتهاء الشهادة الصحية")}: ${esc(fmtDate(e.hcexp))}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:hc.length?`<div class="stack">${hc.map(docItem).join("")}</div>`:`<p class="note" style="margin:0">${T("لا توجد شهادة صحية مرفوعة.")}</p>`}</div>`;
+  h+=`<div class="card"><div class="card-h"><h2>${T("المستندات")}</h2>${other.length?`<span class="note num">${other.length}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:other.length?`<div class="stack">${other.map(docItem).join("")}</div>`:`<p class="note" style="margin:0">${S.docsErr?`<span style="color:var(--bad)">${T("تعذّر تحميل المستندات ({c}).",{c:esc(S.docsErr)})}</span>`:T("لا توجد مستندات مرفوعة.")}</p>`}</div>`;
   return h;
 }
+function emailNote(v){ v=String(v||"").trim().toLowerCase(); if(!v) return T("الإيميل هو اللي يربط الملف بحساب الموظف."); const m=S.members[v]||(v===String(window.OWNER_EMAIL||"").toLowerCase()?{name:"Admin"}:null);
+  return m?`<span style="color:var(--good)">${T("مرتبط بحساب الدخول: {n}",{n:esc(m.name||v)})}</span>`:`<span style="color:var(--bad)">${T("هذا الإيميل غير مضاف كحساب دخول، فالموظف ما راح يشوف ملفه. أضفه من الثلاث نقاط أو اختر إيميل حسابه من القائمة.")}</span>`; }
+document.addEventListener("input",e=>{ if(e.target.id==="ef-email"&&$("efEmailNote")) $("efEmailNote").innerHTML=emailNote(e.target.value); });
 function empForm(e){
   const P=S.ocrPending;
-  return `${P?`<div class="insight" style="margin-bottom:12px">${T("تمت قراءة الملف وتعبئة {n} حقل تلقائياً. راجع الحقول وصحّح أي خطأ، ثم اضغط حفظ.",{n:N(P.found)})}${P.rawBranch&&P.rawBranch!==e.branch?"<br>"+T("الفرع في الملف: «{b}». اختر الفرع المطابق في التطبيق، ويتذكره التطبيق للملفات الجاية.",{b:esc(P.rawBranch)}):""}${P.left?"<br>"+T("باقي {n} ملف بعد هذا.",{n:N(P.left)}):""}</div>`:""}<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2>${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:72px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">`:""}</div><datalist id="brListE">${allBranches().map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label>${f.t==="date"?dateSel("ef-"+f.k,e[f.k]||"",`data-ef="${f.k}"`,f.k==="dob"?1940:now.getFullYear()-30,now.getFullYear()+15):`<input id="ef-${f.k}" data-ef="${f.k}" ${f.k==="branch"?'list="brListE"':""} type="${f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}">`}</div>`).join("")}</div>`).join("")}
+  return `${P?`<div class="insight" style="margin-bottom:12px">${T("تمت قراءة الملف وتعبئة {n} حقل تلقائياً. راجع الحقول وصحّح أي خطأ، ثم اضغط حفظ.",{n:N(P.found)})}${P.rawBranch&&P.rawBranch!==e.branch?"<br>"+T("الفرع في الملف: «{b}». اختر الفرع المطابق في التطبيق، ويتذكره التطبيق للملفات الجاية.",{b:esc(P.rawBranch)}):""}${P.left?"<br>"+T("باقي {n} ملف بعد هذا.",{n:N(P.left)}):""}</div>`:""}<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2>${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:72px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">`:""}</div><datalist id="memListE">${Object.keys(S.members).map(k=>`<option value="${esc(k)}">${esc(S.members[k].name||"")}</option>`).join("")}</datalist>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label>${f.k==="branch"?`<select id="ef-branch" data-ef="branch"><option value="">${T("اختر الفرع")}</option>${[...new Set([...allBranches(),e.branch].filter(Boolean))].map(n=>`<option value="${esc(n)}" ${e.branch===n?"selected":""}>${esc(n)}</option>`).join("")}</select>`:f.k==="email"?`<input id="ef-email" data-ef="email" list="memListE" type="email" dir="ltr" value="${esc(e.email||"")}"><div class="note" id="efEmailNote" style="margin-top:4px">${emailNote(e.email)}</div>`:(f.t==="date"?dateSel("ef-"+f.k,e[f.k]||"",`data-ef="${f.k}"`,f.k==="dob"?1940:now.getFullYear()-30,now.getFullYear()+15):`<input id="ef-${f.k}" data-ef="${f.k}" ${f.k==="email"?'list="memListE"':""} type="${f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}">`)}</div>`).join("")}</div>`).join("")}
     <div class="field" style="margin-top:12px"><label for="ef-notes">${T("ملاحظات")} ${T("(اختياري)")}</label><textarea id="ef-notes" data-ef="notes">${esc(e.notes||"")}</textarea></div>
     <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveEmp2">${T("حفظ")}</button><button class="btn" data-act="cancelEmp">${T(P?"تخطي هذا الملف":"إلغاء")}</button></div></div>
     ${P&&P.att?`<div class="card"><div class="card-h"><h2>${T("صفحات الملف")}</h2></div><div class="stack">${P.att.pages.slice(0,2).map((d,i)=>`<img class="pdfpg" data-pg="p${i}" alt="" src="${d}">`).join("")}</div></div>`:""}`;
@@ -1475,6 +1491,16 @@ async function attachPdf(id,e,file,r){
   const fn=String(file.name||"file.pdf").slice(0,80), base=id+"_"+Date.now().toString(36);
   for(let i=0;i<r.pages.length;i++) await S.db.doc("empdocs/"+base+"_"+(i+1)).set({emp:id,email:String(e.email||"").toLowerCase(),file:fn,page:i+1,img:r.pages[i],at:todayKey});
 }
+async function imageToJpeg(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), im=new Image(); im.onload=()=>{ const mx=1400, k=Math.min(1,mx/Math.max(im.width,im.height)), c=document.createElement("canvas"); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+  const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url); let q=0.75, d=c.toDataURL("image/jpeg",q); while(d.length>600000&&q>0.3){ q-=0.15; d=c.toDataURL("image/jpeg",q); } res(d); }; im.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); }; im.src=url; }); }
+async function uploadHc(file){
+  const id=S.empOpen, e=S.employees[id]; if(!e||!S.db) return; toast(T("جارٍ تجهيز الملف…"));
+  try{ const pages=/pdf/i.test(file.type)||/\.pdf$/i.test(file.name) ? (await pdfToImages(file)).pages.slice(0,3) : [await imageToJpeg(file)];
+    const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) if(x.data().kind==="hc") await x.ref.delete();
+    const base=id+"_hc_"+Date.now().toString(36);
+    for(let i=0;i<pages.length;i++) await S.db.doc("empdocs/"+base+"_"+(i+1)).set({emp:id,email:String(e.email||"").toLowerCase(),kind:"hc",file:T("الشهادة الصحية"),page:i+1,img:pages[i],at:todayKey});
+    S.docsFor=null; render(true); toast(T("تم رفع الشهادة الصحية.")); }
+  catch(err){ toast(T("تعذّر رفع الشهادة ({c}).",{c:(err&&err.code)||(err&&err.message)||"error"})); } }
 async function uploadEmpPdf(file){
   const e=S.employees[S.empOpen]; if(!e||!S.db) return; toast(T("جارٍ تجهيز الملف…"));
   let r; try{ r=await pdfToImages(file); }catch(err){ toast(T("تعذّر قراءة ملف PDF.")); return; }
@@ -1589,8 +1615,11 @@ async function nextOcr(){
   const f=res.fields, list=Object.keys(S.employees);
   let id=item.id||(f.no?list.find(k=>canonKey(S.employees[k].no||"")===canonKey(f.no)):null);
   if(!id&&f.name) id=list.find(k=>canonKey(S.employees[k].name||"")===canonKey(f.name));
-  const alias=(S.settings.branchAlias||{})[canonKey(f.branch||"")]; const rawBranch=f.branch||""; if(alias) f.branch=alias;
+  const rawBranch=f.branch||""; f.branch=mapBranch(rawBranch); if(!f.branch) delete f.branch;
   const base=id?clone(S.employees[id]):{}; const e=Object.assign(base,f); if(res.photo) e.photo=res.photo; if(id) e.id=id; if(!e.branch&&selBranch()) e.branch=selBranch();
+  /* the file's own email is often not the one the employee signs in with: prefer the account already added for this person */
+  const mem=Object.keys(S.members).map(k=>Object.assign({email:k},S.members[k]));
+  if(!mem.some(m=>m.email===String(e.email||"").toLowerCase())){ const byName=mem.find(m=>m.name&&canonKey(m.name)===canonKey(e.name||"")); if(byName){ if(e.email) e.fileEmail=e.email; e.email=byName.email; } }
   S.ocrPending={file:res.file,att:res.att,attErr:res.attErr,rawBranch,found:Object.keys(f).length,left:q.length};
   S.empEdit=e; S.empOpen=null; S.tab="profile"; render(true); window.scrollTo(0,0);
 }
@@ -1920,6 +1949,7 @@ $("fileOrder").addEventListener("change",e=>onFile("order",e.target));
 $("fileStock").addEventListener("change",e=>onFile("stock",e.target));
 $("filePrice").addEventListener("change",e=>onFile("price",e.target));
 $("fileEmpXls").addEventListener("change",e=>onFile("empxls",e.target));
+$("fileHc").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) uploadHc(f); });
 $("fileEmpPdfs").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length&&isAdmin()) queueOcr(fs,null); });
 $("fileEmpPdf").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) queueOcr([f],S.empOpen); });
 
@@ -1999,6 +2029,8 @@ document.addEventListener("click",async e=>{
     if(!nm||!/^[^@\s\/]+@[^@\s\/]+\.[^@\s\/]+$/.test(em)||!br){ toast(T("اكتب الاسم وإيميلاً صحيحاً واختر الفرع.")); return; }
     const adminRole=br==="__admin";
     if(!await save("members",em,{name:nm,email:em,role:adminRole?"admin":"staff",branch:adminRole?"":br,shift:sh,perms:ALLP()})) return;
+    { const fk=Object.keys(S.employees).find(k=>canonKey(S.employees[k].name||"")===canonKey(nm)); if(fk){ const fe=clone(S.employees[fk]); if(String(fe.email||"").toLowerCase()!==em){ if(fe.email&&!S.members[String(fe.email).toLowerCase()]) fe.fileEmail=fe.email; fe.email=em; if(!fe.branch&&!adminRole) fe.branch=br; await save("employees",fk,fe);
+        try{ const sn=await S.db.collection("empdocs").where("emp","==",fk).get(); for(const x of sn.docs) await x.ref.update({email:em}); }catch(e){} toast(T("تم ربط ملف الموظف «{n}» بهذا الحساب.",{n:fe.name})); } } }
     if(!adminRole){ const cfg=teamCfg(br); if(!cfg.names.some(x=>x.n===nm)) await save("staff",bid(br),{branch:br,names:cfg.names.concat([{n:nm,s:sh}]),m:cfg.m}); }
     render(true); toast(T("تمت إضافة الموظف.")); }
   else if (act==="delMember"){ if(b.dataset.c){ removeDoc("members",b.dataset.id); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
@@ -2009,12 +2041,13 @@ document.addEventListener("click",async e=>{
   else if (act==="upEmpXls") $("fileEmpXls").click();
   else if (act==="upEmpPdf") $("fileEmpPdf").click();
   else if (act==="upEmpPdfs") $("fileEmpPdfs").click();
+  else if (act==="upHc") $("fileHc").click();
   else if (act==="newEmp"){ S.empEdit={branch:selBranch()||""}; render(true); window.scrollTo(0,0); }
   else if (act==="editEmp"){ const ee=S.employees[S.empOpen]; if(ee){ S.empEdit=Object.assign({id:S.empOpen},clone(ee)); render(true); window.scrollTo(0,0); } }
   else if (act==="cancelEmp"){ S.empEdit=null; if(S.ocrPending){ S.ocrPending=null; S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } render(true); }
   else if (act==="backEmp"){ S.empOpen=null; S.docsFor=null; render(true); }
   else if (act==="saveEmp2"){ const d={}; document.querySelectorAll("[data-ef]").forEach(i=>{ const v=i.value.trim(); if(v) d[i.dataset.ef]=i.dataset.ef==="email"?v.toLowerCase():v.slice(0,i.dataset.ef==="notes"?2000:120); });
-    if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey; if(S.empEdit.photo) d.photo=S.empEdit.photo;
+    if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey; if(S.empEdit.photo) d.photo=S.empEdit.photo; if(S.empEdit.fileEmail) d.fileEmail=S.empEdit.fileEmail;
     const P=S.ocrPending;
     if(await save("employees",id,d)){ const oldEmail=String((S.empEdit.email)||"").toLowerCase(); if(S.db&&S.empEdit.id&&oldEmail!==(d.email||"")){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.update({email:d.email||""}); }catch(e){} }
       let attMsg="";
