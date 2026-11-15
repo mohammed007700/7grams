@@ -449,6 +449,7 @@ const EN = {
 "لا يوجد ملف منتجات لهذا الفرع":"No products file for this branch","إذا كان في الملف عمود الفرع يُحفظ كل فرع لحاله، ويظهر لكل موظف فرعه فقط.":"If the file has a branch column each branch is saved separately, and each employee sees only their branch.",
 "تم تحليل {n} منتج على {b} فرع لشهر {m}.":"Analysed {n} products across {b} branch(es) for {m}.",
 "الأعلى":"Top","الأقل":"Bottom",
+"مدير: يشوف كل الفروع":"Admin: sees all branches","موظف: يشوف فرعه فقط":"Staff: sees own branch only","تنبيه: هذا الحساب مدير ويشوف بيانات كل الفروع.":"Note: this account is an admin and sees every branch's data.","هذا الحساب بدون فرع، فما راح يشوف أي بيانات.":"This account has no branch, so it will not see any data.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1747,7 +1748,7 @@ function renderMenu(){
   btn.classList.toggle("none",!show); btn.setAttribute("aria-label",T("فتح الإعدادات"));
   if(!show){ closeMenu(); m.innerHTML=""; return; }
   const brs=allBranches(), list=Object.keys(S.members).map(k=>Object.assign({id:k},S.members[k])).sort((a,b)=>String(a.branch||"").localeCompare(String(b.branch||""))||String(a.name||"").localeCompare(String(b.name||"")));
-  const brOpts=cur=>`<option value="__admin" ${cur==="__admin"?"selected":""}>${T("مدير (كل الفروع)")}</option>${[...new Set([...brs,cur].filter(x=>x&&x!=="__admin"))].map(n=>`<option value="${esc(n)}" ${cur===n?"selected":""}>${esc(n)}</option>`).join("")}`;
+  const brOpts=cur=>`${[...new Set([...brs,cur].filter(x=>x&&x!=="__admin"))].map(n=>`<option value="${esc(n)}" ${cur===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__admin" ${cur==="__admin"?"selected":""}>${T("مدير (كل الفروع)")}</option>`;
   const shOpts=cur=>SHIFTS.map(([k,t])=>`<option value="${k}" ${cur===k?"selected":""}>${T(t)}</option>`).join("");
   let h=`<div class="menu-h"><h2>${T("الإعدادات")}</h2><button class="btn sm" data-act="closeMenu">${T("إغلاق")}</button></div>
     <h2>${T("الفروع")} <span class="note num">${brs.length}</span></h2>
@@ -1761,7 +1762,7 @@ function renderMenu(){
     <div class="row" style="margin-top:10px"><button class="btn pri" data-act="addMember">${T("إضافة")}</button></div>
     <h2 style="margin-top:22px">${T("الموظفون المضافون")} <span class="note num">${list.length}</span></h2>`;
   h+=list.length?list.map((u,i)=>{ const pp=u.perms||{}, adminRow=u.role==="admin";
-    return `<div class="ucard"><div class="urow"><span class="un">${esc(u.name||"")}<br><bdi dir="ltr" class="note">${esc(u.email||u.id)}</bdi></span><button class="btn sm" data-act="delMember" data-id="${esc(u.id)}">${T("إزالة")}</button></div>
+    return `<div class="ucard"${adminRow?' style="border-color:var(--bad)"':""}><div class="urow"><span class="un">${esc(u.name||"")} ${adminRow?`<span class="pill bad">${T("مدير: يشوف كل الفروع")}</span>`:u.branch?`<span class="pill good">${T("موظف: يشوف فرعه فقط")}</span>`:`<span class="pill warn">${T("هذا الحساب بدون فرع، فما راح يشوف أي بيانات.")}</span>`}<br><bdi dir="ltr" class="note">${esc(u.email||u.id)}</bdi></span><button class="btn sm" data-act="delMember" data-id="${esc(u.id)}">${T("إزالة")}</button></div>
       <div class="row" style="align-items:flex-end"><div class="field"><label for="mb-${i}">${T("الفرع")}</label><select id="mb-${i}" data-mb="${esc(u.id)}">${brOpts(adminRow?"__admin":(u.branch||""))}</select></div>${adminRow?"":`<div class="field" style="flex:0 1 120px"><label for="ms-${i}">${T("الشفت")}</label><select id="ms-${i}" data-ms="${esc(u.id)}">${shOpts(u.shift||"m")}</select></div>`}</div>
       ${adminRow?"":`<div class="ucks">${SECS.map(([k,t])=>`<label><input type="checkbox" id="mp-${i}-${k}" data-mp="${esc(u.id)}" data-sec="${k}" ${pp[k]!==false?"checked":""}>${T(t)}</label>`).join("")}</div>`}
       <div class="row" style="margin-top:10px"><a class="btn sm" href="mailto:${encodeURIComponent(u.email||u.id)}?subject=${encodeURIComponent(T("دعوة لتطبيق 7 GRAMS"))}&body=${encodeURIComponent(inviteText(u))}">${T("دعوة بالإيميل")}</a><button class="btn sm" data-act="copyInvite" data-id="${esc(u.id)}">${T("نسخ الدعوة")}</button></div></div>`; }).join(""):`<p class="note">${T("لا يوجد موظفون مضافون بعد.")}</p>`;
