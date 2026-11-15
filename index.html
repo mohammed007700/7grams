@@ -260,6 +260,7 @@ nav.tabs button.on::before{content:"";position:absolute;top:-1px;width:28px;heig
 <input type="file" id="filePrice" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="fileEmpXls" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="fileEmpPdf" accept="application/pdf,.pdf" hidden>
+<input type="file" id="fileEmpPdfs" accept="application/pdf,.pdf" multiple hidden>
 <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -423,6 +424,8 @@ const EN = {
 "جارٍ تجهيز الملف…":"Preparing the file…","تعذّر قراءة ملف PDF.":"Couldn't read the PDF file.","تعذّر حفظ الملف. قد تكون المساحة ممتلئة.":"Couldn't save the file. Storage may be full.","تم رفع الملف ({n} صفحة).":"File uploaded ({n} pages).","تم رفع أول {n} صفحة من الملف.":"Uploaded the first {n} pages of the file.",
 "اكتب اسم الموظف.":"Enter the employee name.","تم حفظ بيانات الموظف.":"Employee data saved.","تم حذف الملف.":"File deleted.",
 "اليوم":"Day","الشهر":"Month","السنة":"Year",
+"رفع ملفات PDF":"Upload PDF files","جارٍ رفع {a} من {b}…":"Uploading {a} of {b}…","تم رفع {n} ملف: {c} موظف جديد و{u} موظف موجود.":"Uploaded {n} file(s): {c} new and {u} existing staff.","تعذّر رفع {n} ملف.":"{n} file(s) could not be uploaded.",
+"ملفات PDF تُربط بالموظف تلقائياً من اسم الملف (الاسم والرقم الوظيفي)، ويُنشأ ملف جديد إذا ما كان الموظف موجوداً. تقدر تختار عدة ملفات مرة واحدة.":"PDF files are linked to the employee automatically from the file name (name and employee number); a new file is created if the employee does not exist. You can pick several files at once.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1420,8 +1423,9 @@ function vProfile(){
   const shown=list.filter(e=>(!b||e.branch===b)&&(!qv||[e.name,e.no,e.email,e.phone].some(x=>String(x||"").toLowerCase().includes(qv)))).sort((x,y)=>String(x.branch||"").localeCompare(String(y.branch||""))||String(x.name||"").localeCompare(String(y.name||"")));
   const alerts=list.map(e=>({e,a:expAlerts(e)})).filter(x=>x.a.length);
   let h=`<h1>${T("ملفات الموظفين")}</h1><p class="sub">${T("كل موظف يرى ملفه فقط في خانة «بياناتي»")}${b?" · "+esc(b):""}</p><div class="stack">
-    <div class="card soft"><div class="row"><button class="btn pri" data-act="newEmp">${T("إضافة موظف")}</button><button class="btn" data-act="upEmpXls">${T("رفع ملف Excel")}</button><span class="note">${T("{n} موظف",{n:N(list.length)})}</span></div>
-    <p class="note" style="margin:10px 0 0">${T("ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».")}</p></div>`;
+    <div class="card soft"><div class="row"><button class="btn" data-act="newEmp">${T("إضافة موظف")}</button><button class="btn pri" data-act="upEmpPdfs">${T("رفع ملفات PDF")}</button><button class="btn" data-act="upEmpXls">${T("رفع ملف Excel")}</button><span class="note">${T("{n} موظف",{n:N(list.length)})}</span></div>
+    <p class="note" style="margin:10px 0 0">${T("ملفات PDF تُربط بالموظف تلقائياً من اسم الملف (الاسم والرقم الوظيفي)، ويُنشأ ملف جديد إذا ما كان الموظف موجوداً. تقدر تختار عدة ملفات مرة واحدة.")}</p>
+    <p class="note" style="margin:6px 0 0">${T("ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».")}</p></div>`;
   if (alerts.length) h+=`<div class="card"><div class="card-h"><h2>${T("وثائق قاربت على الانتهاء")}</h2><span class="pill bad">${N(alerts.length)}</span></div>${alerts.map(x=>`<button class="trow" data-emp="${esc(x.e.id)}"><span class="tt"><b>${esc(x.e.name||"")}</b><span class="note">${esc(x.e.branch||"")}</span></span><span class="row" style="justify-content:flex-end">${x.a.map(expPill).join("")}</span></button>`).join("")}</div>`;
   h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}</div>`;
   return h+"</div>";
@@ -1449,12 +1453,46 @@ async function pdfToImages(file){ const lib=await loadPdfJs(), doc=await lib.get
     c.width=Math.round(vp.width); c.height=Math.round(vp.height); const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
     await pg.render({canvasContext:ctx,viewport:vp}).promise; let q=0.7, d=c.toDataURL("image/jpeg",q); while(d.length>700000&&q>0.3){ q-=0.15; d=c.toDataURL("image/jpeg",q); } out.push(d); }
   return {pages:out,total:doc.numPages}; }
+async function attachPdf(id,e,file,r){
+  const fn=String(file.name||"file.pdf").slice(0,80), base=id+"_"+Date.now().toString(36);
+  for(let i=0;i<r.pages.length;i++) await S.db.doc("empdocs/"+base+"_"+(i+1)).set({emp:id,email:String(e.email||"").toLowerCase(),file:fn,page:i+1,img:r.pages[i],at:todayKey});
+}
 async function uploadEmpPdf(file){
   const e=S.employees[S.empOpen]; if(!e||!S.db) return; toast(T("جارٍ تجهيز الملف…"));
   let r; try{ r=await pdfToImages(file); }catch(err){ toast(T("تعذّر قراءة ملف PDF.")); return; }
-  const fn=String(file.name||"file.pdf").slice(0,80), base=S.empOpen+"_"+Date.now().toString(36);
-  for(let i=0;i<r.pages.length;i++){ try{ await S.db.doc("empdocs/"+base+"_"+(i+1)).set({emp:S.empOpen,email:String(e.email||"").toLowerCase(),file:fn,page:i+1,img:r.pages[i],at:todayKey}); }catch(err){ toast(T("تعذّر حفظ الملف. قد تكون المساحة ممتلئة.")); break; } }
+  try{ await attachPdf(S.empOpen,e,file,r); }catch(err){ toast(T("تعذّر حفظ الملف. قد تكون المساحة ممتلئة.")); }
   S.docsFor=null; render(true); toast(T(r.total>r.pages.length?"تم رفع أول {n} صفحة من الملف.":"تم رفع الملف ({n} صفحة).",{n:r.pages.length}));
+}
+/* name and number from file names such as "ملف الموظف - Van Jhon Guevarra Jauculan - 10114.pdf" */
+function nameFromFile(fn){
+  const base=String(fn).replace(/\.pdf$/i,"").replace(/_/g," ");
+  const parts=base.split(/\s+[-–—·|]\s+|\s*[-–—]\s*(?=\d)|(?<=\d)\s*[-–—]\s*/).map(x=>x.trim()).filter(Boolean);
+  let no=""; const nm=[];
+  parts.forEach(x=>{ const d=normDigits(x); if(/^#?\d{3,10}$/.test(d)) no=d.replace("#",""); else if(!/^(ملف|employee|file|staff)/i.test(x)||parts.length===1) nm.push(x); });
+  if(!no){ const m=normDigits(base).match(/(?:^|\D)(\d{4,10})(?:\D|$)/); if(m) no=m[1]; }
+  const name=(nm.sort((a,b)=>b.length-a.length)[0]||"").replace(/\d+/g,"").replace(/\s+/g," ").trim();
+  return {name,no};
+}
+async function pdfFacts(file){ /* reads email and mobile when the PDF has a text layer; scanned files simply return nothing */
+  try{ const lib=await loadPdfJs(), doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise; let tx="";
+    for(let i=1;i<=Math.min(doc.numPages,3);i++){ const c=await (await doc.getPage(i)).getTextContent(); tx+=" "+c.items.map(x=>x.str).join(" "); }
+    tx=normDigits(tx); const o={}; const em=tx.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/); if(em) o.email=em[0].toLowerCase();
+    const ph=tx.match(/(?:\+?966|0)5\d{8}/); if(ph) o.phone=ph[0]; return o; }catch(e){ return {}; } }
+async function uploadManyPdfs(files){
+  if(!S.db||!files.length) return; let made=0, upd=0, bad=0;
+  for(let i=0;i<files.length;i++){ const f=files[i]; toast(T("جارٍ رفع {a} من {b}…",{a:i+1,b:files.length}));
+    try{ const g=nameFromFile(f.name), list=Object.keys(S.employees);
+      let id=g.no?list.find(k=>canonKey(S.employees[k].no||"")===canonKey(g.no)):null;
+      if(!id&&g.name) id=list.find(k=>canonKey(S.employees[k].name||"")===canonKey(g.name));
+      const facts=await pdfFacts(f);
+      let e=id?clone(S.employees[id]):null;
+      if(!e){ e={name:g.name||f.name.replace(/\.pdf$/i,""),updatedAt:todayKey}; if(g.no) e.no=g.no; if(selBranch()) e.branch=selBranch(); id=empKey(e); made++; } else upd++;
+      let changed=!S.employees[id]; ["email","phone"].forEach(k=>{ if(facts[k]&&!e[k]){ e[k]=facts[k]; changed=true; } });
+      if(changed){ if(!await save("employees",id,e)) throw new Error("save"); }
+      const r=await pdfToImages(f); await attachPdf(id,e,f,r);
+    }catch(err){ bad++; } }
+  S.docsFor=null; render(true);
+  toast(T("تم رفع {n} ملف: {c} موظف جديد و{u} موظف موجود.",{n:files.length-bad,c:made,u:upd})+(bad?" "+T("تعذّر رفع {n} ملف.",{n:bad}):""));
 }
 document.addEventListener("input",e=>{ if(e.target.id==="empQ"){ S.empQ=e.target.value; const pos=e.target.selectionStart; render(true); const i=$("empQ"); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
 function vMore(){
@@ -1777,6 +1815,7 @@ $("fileOrder").addEventListener("change",e=>onFile("order",e.target));
 $("fileStock").addEventListener("change",e=>onFile("stock",e.target));
 $("filePrice").addEventListener("change",e=>onFile("price",e.target));
 $("fileEmpXls").addEventListener("change",e=>onFile("empxls",e.target));
+$("fileEmpPdfs").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length&&isAdmin()) uploadManyPdfs(fs); });
 $("fileEmpPdf").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) uploadEmpPdf(f); });
 
 /* ---------- export ---------- */
@@ -1858,6 +1897,7 @@ document.addEventListener("click",async e=>{
   else if (act==="upPrice") $("filePrice").click();
   else if (act==="upEmpXls") $("fileEmpXls").click();
   else if (act==="upEmpPdf") $("fileEmpPdf").click();
+  else if (act==="upEmpPdfs") $("fileEmpPdfs").click();
   else if (act==="newEmp"){ S.empEdit={branch:selBranch()||""}; render(true); window.scrollTo(0,0); }
   else if (act==="editEmp"){ const ee=S.employees[S.empOpen]; if(ee){ S.empEdit=Object.assign({id:S.empOpen},clone(ee)); render(true); window.scrollTo(0,0); } }
   else if (act==="cancelEmp"){ S.empEdit=null; render(true); }
