@@ -434,6 +434,7 @@ const EN = {
 "ملفات PDF تُقرأ تلقائياً وتتعبأ منها بيانات الموظف (الاسم، الرقم، الجنسية، الهوية، الشهادة الصحية، الجوال، الإيميل، التواريخ...) مع صورته، ثم تراجعها وتحفظ. تقدر تختار عدة ملفات.":"PDF files are read automatically and the employee's data is filled in (name, number, nationality, ID, health certificate, mobile, email, dates...) with the photo; then you review and save. You can pick several files.",
 "الفروع":"Branches","اسم فرع جديد":"New branch name","إضافة فرع":"Add branch","تمت إضافة الفرع.":"Branch added.","هذا الفرع موجود.":"This branch already exists.","اكتب اسم الفرع.":"Enter the branch name.","تم حذف الفرع من القائمة.":"Branch removed from the list.",
 "حذف الفرع من القائمة ما يحذف بياناته.":"Removing a branch from the list does not delete its data.",
+"تعذّر حفظ صفحات الملف ({c}).":"Couldn't save the file pages ({c}).","تعذّر تحميل المستندات ({c}).":"Couldn't load the documents ({c}).","تم حفظ الموظف مع {n} صفحة من الملف.":"Employee saved with {n} page(s) of the file.","لم يُرفق ملف لأن قراءة PDF تعذّرت ({c}).":"No file attached because the PDF could not be read ({c}).",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1401,7 +1402,7 @@ function serviceText(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||"")) return ""; const
 function myEmployee(){ const em=S.email; return Object.keys(S.employees).map(k=>Object.assign({id:k},S.employees[k])).find(e=>String(e.email||"").toLowerCase()===em)||null; }
 function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsFor=e.id; S.empdocs=null;
   const q=S.admin ? S.db.collection("empdocs").where("emp","==",e.id) : S.db.collection("empdocs").where("email","==",S.email);
-  q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; render(); }).catch(()=>{ S.empdocs=[]; render(); }); }
+  q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; S.docsErr=""; render(); }).catch(err=>{ S.empdocs=[]; S.docsErr=(err&&err.code)||"error"; render(); }); }
 function empCard(e,edit){
   const al=expAlerts(e), sv=serviceText(e.hire);
   let h=`<div class="card"><div class="card-h"><div class="row" style="flex-wrap:nowrap;align-items:center">${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:64px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none">`:""}<div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
@@ -1413,7 +1414,7 @@ function empCard(e,edit){
   h+=`</div>`;
   loadDocs(e);
   const docs=S.empdocs;
-  h+=`<div class="card"><div class="card-h"><h2>${T("المستندات")}</h2>${docs&&docs.length?`<span class="note num">${docs.length}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:docs.length?`<div class="stack">${docs.map(d=>`<figure style="margin:0"><img class="pdfpg" data-pg="${esc(d.id)}" alt="${esc(d.file||"")} ${d.page}" src="${esc(d.img)}"><figcaption class="note">${esc(d.file||"")} · ${T("صفحة {n}",{n:N(d.page)})}${edit?` <button class="btn sm" data-act="delEmpDoc" data-file="${esc(d.file||"")}">${T("حذف الملف")}</button>`:""}</figcaption></figure>`).filter((x,i,arr)=>true).join("")}</div>`:`<p class="note" style="margin:0">${T("لا توجد مستندات مرفوعة.")}</p>`}</div>`;
+  h+=`<div class="card"><div class="card-h"><h2>${T("المستندات")}</h2>${docs&&docs.length?`<span class="note num">${docs.length}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:docs.length?`<div class="stack">${docs.map(d=>`<figure style="margin:0"><img class="pdfpg" data-pg="${esc(d.id)}" alt="${esc(d.file||"")} ${d.page}" src="${esc(d.img)}"><figcaption class="note">${esc(d.file||"")} · ${T("صفحة {n}",{n:N(d.page)})}${edit?` <button class="btn sm" data-act="delEmpDoc" data-file="${esc(d.file||"")}">${T("حذف الملف")}</button>`:""}</figcaption></figure>`).filter((x,i,arr)=>true).join("")}</div>`:`<p class="note" style="margin:0">${S.docsErr?`<span style="color:var(--bad)">${T("تعذّر تحميل المستندات ({c}).",{c:esc(S.docsErr)})}</span>`:T("لا توجد مستندات مرفوعة.")}</p>`}</div>`;
   return h;
 }
 function empForm(e){
@@ -1464,7 +1465,9 @@ function loadPdfJs(){ if(PDFJS) return PDFJS; PDFJS=new Promise((res,rej)=>{ con
 async function pdfToImages(file){ const lib=await loadPdfJs(), doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise, out=[];
   for(let i=1;i<=Math.min(doc.numPages,15);i++){ const pg=await doc.getPage(i), vp0=pg.getViewport({scale:1}), sc=Math.min(1100/vp0.width,2), vp=pg.getViewport({scale:sc}), c=document.createElement("canvas");
     c.width=Math.round(vp.width); c.height=Math.round(vp.height); const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
-    await pg.render({canvasContext:ctx,viewport:vp}).promise; let q=0.7, d=c.toDataURL("image/jpeg",q); while(d.length>700000&&q>0.3){ q-=0.15; d=c.toDataURL("image/jpeg",q); } out.push(d); }
+    await pg.render({canvasContext:ctx,viewport:vp}).promise; let q=0.7, d=c.toDataURL("image/jpeg",q); while(d.length>600000&&q>0.25){ q-=0.15; d=c.toDataURL("image/jpeg",q); }
+    if(d.length>600000){ const t=document.createElement("canvas"); t.width=Math.round(c.width*0.7); t.height=Math.round(c.height*0.7); t.getContext("2d").drawImage(c,0,0,t.width,t.height); d=t.toDataURL("image/jpeg",0.5); }
+    out.push(d); }
   return {pages:out,total:doc.numPages}; }
 async function attachPdf(id,e,file,r){
   const fn=String(file.name||"file.pdf").slice(0,80), base=id+"_"+Date.now().toString(36);
@@ -1573,9 +1576,9 @@ async function readEmpPdf(file){
   for(let i=0;i<S.ocrPages;i++){ S.ocrPage=i; ocrStatus(T("جارٍ قراءة الصفحة {a} من {b}…",{a:i+1,b:S.ocrPages})); const r=await wk.recognize(hi.canvases[i]); pages.push({w:hi.canvases[i].width,h:hi.canvases[i].height,words:r.data.words||[]}); }
   const f=parseEmpOcr(pages), photo=hi.canvases[0]?cropPhoto(hi.canvases[0]):"";
   ocrStatus(T("جارٍ تجهيز المستند…"));
-  const att=await pdfToImages(file);
+  let att=null, attErr=""; try{ att=await pdfToImages(file); }catch(e){ attErr=(e&&e.message)||"pdf"; }
   const g=nameFromFile(file.name); if(!f.no&&g.no) f.no=g.no; if(!f.name&&g.name) f.name=g.name;
-  return {fields:f,photo,att,file}; }
+  return {fields:f,photo,att,attErr,file}; }
 async function nextOcr(){
   const q=S.ocrQueue||[]; if(!q.length){ closeModal(); if(TWORKER){ try{ await TWORKER.terminate(); }catch(e){} TWORKER=null; } return; }
   const item=q.shift(); let res;
@@ -1586,7 +1589,7 @@ async function nextOcr(){
   if(!id&&f.name) id=list.find(k=>canonKey(S.employees[k].name||"")===canonKey(f.name));
   const alias=(S.settings.branchAlias||{})[canonKey(f.branch||"")]; const rawBranch=f.branch||""; if(alias) f.branch=alias;
   const base=id?clone(S.employees[id]):{}; const e=Object.assign(base,f); if(res.photo) e.photo=res.photo; if(id) e.id=id; if(!e.branch&&selBranch()) e.branch=selBranch();
-  S.ocrPending={file:res.file,att:res.att,rawBranch,found:Object.keys(f).length,left:q.length};
+  S.ocrPending={file:res.file,att:res.att,attErr:res.attErr,rawBranch,found:Object.keys(f).length,left:q.length};
   S.empEdit=e; S.empOpen=null; S.tab="profile"; render(true); window.scrollTo(0,0);
 }
 function queueOcr(files,id){ if(!files.length||!S.db) return; S.ocrQueue=(S.ocrQueue||[]).concat(files.map(file=>({file,id}))); if(!S.ocrPending&&!S.ocrBusy){ S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } }
@@ -2012,9 +2015,11 @@ document.addEventListener("click",async e=>{
     if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey; if(S.empEdit.photo) d.photo=S.empEdit.photo;
     const P=S.ocrPending;
     if(await save("employees",id,d)){ const oldEmail=String((S.empEdit.email)||"").toLowerCase(); if(S.db&&S.empEdit.id&&oldEmail!==(d.email||"")){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.update({email:d.email||""}); }catch(e){} }
-      if(P){ try{ await attachPdf(id,d,P.file,P.att); }catch(e){ toast(T("تعذّر حفظ الملف. قد تكون المساحة ممتلئة.")); }
+      let attMsg="";
+      if(P){ if(P.att&&P.att.pages&&P.att.pages.length){ try{ await attachPdf(id,d,P.file,P.att); attMsg=T("تم حفظ الموظف مع {n} صفحة من الملف.",{n:P.att.pages.length}); }catch(e){ attMsg=T("تعذّر حفظ صفحات الملف ({c}).",{c:(e&&e.code)||(e&&e.message)||"error"}); } }
+        else attMsg=T("لم يُرفق ملف لأن قراءة PDF تعذّرت ({c}).",{c:P.attErr||"pdf"});
         if(P.rawBranch&&d.branch&&P.rawBranch!==d.branch){ const s8=clone(S.settings); s8.branchAlias=Object.assign({},s8.branchAlias,{[canonKey(P.rawBranch)]:d.branch}); await save("settings","main",s8); } }
-      S.empEdit=null; S.empOpen=id; S.docsFor=null; S.ocrPending=null; render(true); toast(T("تم حفظ بيانات الموظف."));
+      S.empEdit=null; S.empOpen=id; S.docsFor=null; S.ocrPending=null; render(true); toast(attMsg||T("تم حفظ بيانات الموظف."));
       if(P&&(S.ocrQueue||[]).length){ S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } } }
   else if (act==="delEmp2"){ if(b.dataset.c){ const id=S.empOpen; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.delete(); }catch(e){} } S.empOpen=null; removeDoc("employees",id); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="delEmpDoc"){ if(b.dataset.c){ const fn=b.dataset.file; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",S.empOpen).get(); for(const x of sn.docs) if((x.data().file||"")===fn) await x.ref.delete(); }catch(e){} } S.docsFor=null; render(true); toast(T("تم حذف الملف.")); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
