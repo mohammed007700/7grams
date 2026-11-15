@@ -426,6 +426,12 @@ const EN = {
 "اليوم":"Day","الشهر":"Month","السنة":"Year",
 "رفع ملفات PDF":"Upload PDF files","جارٍ رفع {a} من {b}…":"Uploading {a} of {b}…","تم رفع {n} ملف: {c} موظف جديد و{u} موظف موجود.":"Uploaded {n} file(s): {c} new and {u} existing staff.","تعذّر رفع {n} ملف.":"{n} file(s) could not be uploaded.",
 "ملفات PDF تُربط بالموظف تلقائياً من اسم الملف (الاسم والرقم الوظيفي)، ويُنشأ ملف جديد إذا ما كان الموظف موجوداً. تقدر تختار عدة ملفات مرة واحدة.":"PDF files are linked to the employee automatically from the file name (name and employee number); a new file is created if the employee does not exist. You can pick several files at once.",
+"قراءة ملف الموظف":"Reading the employee file","جارٍ فتح الملف…":"Opening the file…","جارٍ تجهيز القراءة… (أول مرة تأخذ وقتاً أطول)":"Preparing the reader… (the first time takes longer)","جارٍ قراءة الصفحة {a} من {b}…":"Reading page {a} of {b}…","جارٍ تجهيز المستند…":"Preparing the document…",
+"تعذّر تحميل أداة القراءة. تأكد من الاتصال بالإنترنت.":"Couldn't load the reader. Check your internet connection.",
+"تمت قراءة الملف وتعبئة {n} حقل تلقائياً. راجع الحقول وصحّح أي خطأ، ثم اضغط حفظ.":"The file was read and {n} fields were filled automatically. Review them, fix any mistake, then press Save.",
+"الفرع في الملف: «{b}». اختر الفرع المطابق في التطبيق، ويتذكره التطبيق للملفات الجاية.":"Branch in the file: \"{b}\". Choose the matching branch in the app; it will be remembered for the next files.",
+"باقي {n} ملف بعد هذا.":"{n} more file(s) after this one.","صفحات الملف":"File pages","تخطي هذا الملف":"Skip this file",
+"ملفات PDF تُقرأ تلقائياً وتتعبأ منها بيانات الموظف (الاسم، الرقم، الجنسية، الهوية، الشهادة الصحية، الجوال، الإيميل، التواريخ...) مع صورته، ثم تراجعها وتحفظ. تقدر تختار عدة ملفات.":"PDF files are read automatically and the employee's data is filled in (name, number, nationality, ID, health certificate, mobile, email, dates...) with the photo; then you review and save. You can pick several files.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1393,7 +1399,7 @@ function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsF
   q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; render(); }).catch(()=>{ S.empdocs=[]; render(); }); }
 function empCard(e,edit){
   const al=expAlerts(e), sv=serviceText(e.hire);
-  let h=`<div class="card"><div class="card-h"><div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
+  let h=`<div class="card"><div class="card-h"><div class="row" style="flex-wrap:nowrap;align-items:center">${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:64px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none">`:""}<div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
   if (al.length) h+=`<div class="row" style="margin-bottom:12px">${al.map(expPill).join("")}</div>`;
   if (sv) h+=`<div class="grid g3" style="margin-bottom:12px">${kpi(T("مدة الخدمة"),sv)}${e.hcexp?kpi(T("انتهاء الشهادة الصحية"),esc(fmtDate(e.hcexp))):""}${e.idexp?kpi(T("انتهاء الهوية / الإقامة"),esc(fmtDate(e.idexp))):""}</div>`;
   EG.forEach(([g,gl])=>{ const fs=EF.filter(f=>f.g===g&&e[f.k]); if(!fs.length) return;
@@ -1406,9 +1412,11 @@ function empCard(e,edit){
   return h;
 }
 function empForm(e){
-  return `<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2></div>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label>${f.t==="date"?dateSel("ef-"+f.k,e[f.k]||"",`data-ef="${f.k}"`,f.k==="dob"?1940:now.getFullYear()-30,now.getFullYear()+15):`<input id="ef-${f.k}" data-ef="${f.k}" type="${f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}">`}</div>`).join("")}</div>`).join("")}
+  const P=S.ocrPending;
+  return `${P?`<div class="insight" style="margin-bottom:12px">${T("تمت قراءة الملف وتعبئة {n} حقل تلقائياً. راجع الحقول وصحّح أي خطأ، ثم اضغط حفظ.",{n:N(P.found)})}${P.rawBranch&&P.rawBranch!==e.branch?"<br>"+T("الفرع في الملف: «{b}». اختر الفرع المطابق في التطبيق، ويتذكره التطبيق للملفات الجاية.",{b:esc(P.rawBranch)}):""}${P.left?"<br>"+T("باقي {n} ملف بعد هذا.",{n:N(P.left)}):""}</div>`:""}<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2>${e.photo?`<img alt="" src="${esc(e.photo)}" style="width:72px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">`:""}</div><datalist id="brListE">${allBranches().map(n=>`<option value="${esc(n)}"></option>`).join("")}</datalist>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label>${f.t==="date"?dateSel("ef-"+f.k,e[f.k]||"",`data-ef="${f.k}"`,f.k==="dob"?1940:now.getFullYear()-30,now.getFullYear()+15):`<input id="ef-${f.k}" data-ef="${f.k}" ${f.k==="branch"?'list="brListE"':""} type="${f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}">`}</div>`).join("")}</div>`).join("")}
     <div class="field" style="margin-top:12px"><label for="ef-notes">${T("ملاحظات")} ${T("(اختياري)")}</label><textarea id="ef-notes" data-ef="notes">${esc(e.notes||"")}</textarea></div>
-    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveEmp2">${T("حفظ")}</button><button class="btn" data-act="cancelEmp">${T("إلغاء")}</button></div></div>`;
+    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveEmp2">${T("حفظ")}</button><button class="btn" data-act="cancelEmp">${T(P?"تخطي هذا الملف":"إلغاء")}</button></div></div>
+    ${P&&P.att?`<div class="card"><div class="card-h"><h2>${T("صفحات الملف")}</h2></div><div class="stack">${P.att.pages.slice(0,2).map((d,i)=>`<img class="pdfpg" data-pg="p${i}" alt="" src="${d}">`).join("")}</div></div>`:""}`;
 }
 function vProfile(){
   const a=isAdmin();
@@ -1424,7 +1432,7 @@ function vProfile(){
   const alerts=list.map(e=>({e,a:expAlerts(e)})).filter(x=>x.a.length);
   let h=`<h1>${T("ملفات الموظفين")}</h1><p class="sub">${T("كل موظف يرى ملفه فقط في خانة «بياناتي»")}${b?" · "+esc(b):""}</p><div class="stack">
     <div class="card soft"><div class="row"><button class="btn" data-act="newEmp">${T("إضافة موظف")}</button><button class="btn pri" data-act="upEmpPdfs">${T("رفع ملفات PDF")}</button><button class="btn" data-act="upEmpXls">${T("رفع ملف Excel")}</button><span class="note">${T("{n} موظف",{n:N(list.length)})}</span></div>
-    <p class="note" style="margin:10px 0 0">${T("ملفات PDF تُربط بالموظف تلقائياً من اسم الملف (الاسم والرقم الوظيفي)، ويُنشأ ملف جديد إذا ما كان الموظف موجوداً. تقدر تختار عدة ملفات مرة واحدة.")}</p>
+    <p class="note" style="margin:10px 0 0">${T("ملفات PDF تُقرأ تلقائياً وتتعبأ منها بيانات الموظف (الاسم، الرقم، الجنسية، الهوية، الشهادة الصحية، الجوال، الإيميل، التواريخ...) مع صورته، ثم تراجعها وتحفظ. تقدر تختار عدة ملفات.")}</p>
     <p class="note" style="margin:6px 0 0">${T("ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».")}</p></div>`;
   if (alerts.length) h+=`<div class="card"><div class="card-h"><h2>${T("وثائق قاربت على الانتهاء")}</h2><span class="pill bad">${N(alerts.length)}</span></div>${alerts.map(x=>`<button class="trow" data-emp="${esc(x.e.id)}"><span class="tt"><b>${esc(x.e.name||"")}</b><span class="note">${esc(x.e.branch||"")}</span></span><span class="row" style="justify-content:flex-end">${x.a.map(expPill).join("")}</span></button>`).join("")}</div>`;
   h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}</div>`;
@@ -1473,28 +1481,111 @@ function nameFromFile(fn){
   const name=(nm.sort((a,b)=>b.length-a.length)[0]||"").replace(/\d+/g,"").replace(/\s+/g," ").trim();
   return {name,no};
 }
-async function pdfFacts(file){ /* reads email and mobile when the PDF has a text layer; scanned files simply return nothing */
-  try{ const lib=await loadPdfJs(), doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise; let tx="";
-    for(let i=1;i<=Math.min(doc.numPages,3);i++){ const c=await (await doc.getPage(i)).getTextContent(); tx+=" "+c.items.map(x=>x.str).join(" "); }
-    tx=normDigits(tx); const o={}; const em=tx.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/); if(em) o.email=em[0].toLowerCase();
-    const ph=tx.match(/(?:\+?966|0)5\d{8}/); if(ph) o.phone=ph[0]; return o; }catch(e){ return {}; } }
-async function uploadManyPdfs(files){
-  if(!S.db||!files.length) return; let made=0, upd=0, bad=0;
-  for(let i=0;i<files.length;i++){ const f=files[i]; toast(T("جارٍ رفع {a} من {b}…",{a:i+1,b:files.length}));
-    try{ const g=nameFromFile(f.name), list=Object.keys(S.employees);
-      let id=g.no?list.find(k=>canonKey(S.employees[k].no||"")===canonKey(g.no)):null;
-      if(!id&&g.name) id=list.find(k=>canonKey(S.employees[k].name||"")===canonKey(g.name));
-      const facts=await pdfFacts(f);
-      let e=id?clone(S.employees[id]):null;
-      if(!e){ e={name:g.name||f.name.replace(/\.pdf$/i,""),updatedAt:todayKey}; if(g.no) e.no=g.no; if(selBranch()) e.branch=selBranch(); id=empKey(e); made++; } else upd++;
-      let changed=!S.employees[id]; ["email","phone"].forEach(k=>{ if(facts[k]&&!e[k]){ e[k]=facts[k]; changed=true; } });
-      if(changed){ if(!await save("employees",id,e)) throw new Error("save"); }
-      const r=await pdfToImages(f); await attachPdf(id,e,f,r);
-    }catch(err){ bad++; } }
-  S.docsFor=null; render(true);
-  toast(T("تم رفع {n} ملف: {c} موظف جديد و{u} موظف موجود.",{n:files.length-bad,c:made,u:upd})+(bad?" "+T("تعذّر رفع {n} ملف.",{n:bad}):""));
-}
+
 document.addEventListener("input",e=>{ if(e.target.id==="empQ"){ S.empQ=e.target.value; const pos=e.target.selectionStart; render(true); const i=$("empQ"); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
+/* ---------- read employee-file PDFs (OCR) ---------- */
+const AR_MONTHS=[["يناير","كانون الثاني"],["فبراير","شباط"],["مارس","آذار"],["أبريل","ابريل","نيسان"],["مايو","أيار"],["يونيو","حزيران"],["يوليو","تموز"],["أغسطس","اغسطس","آب"],["سبتمبر","أيلول"],["أكتوبر","اكتوبر","تشرين الأول"],["نوفمبر","تشرين الثاني"],["ديسمبر","كانون الأول"]];
+const EN_MONTHS=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function arNorm(s){ return String(s||"").replace(/[ً-ْـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/[^ء-يa-z0-9]/gi,"").toLowerCase(); }
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+const simil=(a,b)=>{ a=arNorm(a); b=arNorm(b); if(!a||!b) return 0; return 1-lev(a,b)/Math.max(a.length,b.length); };
+function ocrDate(v){ const s=normDigits(String(v||"")); const y=(s.match(/(?:19|20)\d\d/)||[])[0]; if(!y) return "";
+  let m=0; const n=arNorm(s); AR_MONTHS.forEach((names,i)=>{ if(!m&&names.some(x=>{ const k=arNorm(x); return n.includes(k)||(k.length>=4&&n.split(/\d+/).some(part=>part&&simil(part,x)>=0.6)); })) m=i+1; });
+  if(!m){ const lo=s.toLowerCase(); EN_MONTHS.forEach((x,i)=>{ if(!m&&lo.includes(x)) m=i+1; }); }
+  const nums=(s.replace(y,"").match(/\d{1,2}/g)||[]).map(Number).filter(x=>x>=1&&x<=31);
+  if(!m){ const r=s.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/)||s.match(/(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/); if(r){ const p=r.slice(1).map(Number); if(p[0]>31) return `${p[0]}-${pad(p[1])}-${pad(p[2])}`; return `${p[2]}-${pad(p[1])}-${pad(p[0])}`; } return ""; }
+  const d=nums[0]||1; return `${y}-${pad(m)}-${pad(Math.min(d,new Date(+y,m,0).getDate()))}`; }
+/* label text exactly as printed by the employee-file template, and how to read each value */
+const OCR_LABELS=[
+ ["name",["الاسم بالعربي"],"text"],["nameEn",["الاسم بالإنجليزي"],"text"],["no",["الرقم الوظيفي"],"num"],["nat",["الجنسية"],"text"],["dob",["تاريخ الميلاد"],"date"],
+ ["branch",["الفرع / الموقع"],"text"],["title",["المسمى الوظيفي"],"text"],["dept",["الإدارة"],"text"],["hire",["تاريخ التعيين"],"date"],["prob",["نهاية فترة التجربة"],"date"],
+ ["cend",["نهاية العقد"],"date"],["company",["الشركة التابع لها"],"text"],["sponsor",["الكفيل"],"text"],
+ ["idno",["رقم الهوية / الإقامة"],"num"],["idexp",["انتهاء الهوية / الإقامة"],"date"],["passno",["رقم الجواز"],"id"],["passexp",["انتهاء الجواز"],"date"],
+ ["hcno",["رقم الشهادة الصحية"],"num"],["hcexp",["انتهاء الشهادة الصحية"],"date"],["phone",["رقم الجوال"],"num"],["email",["البريد الإلكتروني"],"email"],
+ ["city",["مدينة السكن"],"text"],["emname",["جهة اتصال للطوارئ"],"text"],["emphone",["جوال الطوارئ"],"num"],
+ ["mgr",["مدير المنطقة"],"text","below"],["status",["الحالة"],"text","below"]
+];
+const OCR_PAIRS=[["name","nameEn"],["no",""],["nat","dob"],["branch","title"],["dept","hire"],["prob",""],["cend","company"],["sponsor",""],["idno","idexp"],["passno","passexp"],["hcno","hcexp"],["phone","email"],["city","emname"],["","emphone"]];
+function ocrLines(words){ const ws=words.filter(w=>w.text&&w.text.trim()).map(w=>({t:w.text.trim(),x0:w.bbox.x0,x1:w.bbox.x1,y0:w.bbox.y0,y1:w.bbox.y1,cy:(w.bbox.y0+w.bbox.y1)/2,h:w.bbox.y1-w.bbox.y0})).sort((a,b)=>a.cy-b.cy);
+  const lines=[]; ws.forEach(w=>{ const L=lines.find(l=>Math.abs(l.cy-w.cy)<Math.max(l.h,w.h)*0.6); if(L){ L.ws.push(w); L.cy=(L.cy*(L.ws.length-1)+w.cy)/L.ws.length; L.h=Math.max(L.h,w.h); } else lines.push({cy:w.cy,h:w.h,ws:[w]}); });
+  lines.forEach(l=>l.ws.sort((a,b)=>b.x0-a.x0)); return lines; }
+function cleanVal(raw,kind){ let s=normDigits(raw).replace(/[‎‏‪-‮]/g,"").replace(/\s+/g," ").trim();
+  if(kind==="num"){ const m=s.replace(/[\s-]/g,"").match(/\d{5,15}/); return m?m[0]:""; }
+  if(kind==="id"){ const m=s.replace(/\s/g,"").match(/[A-Z0-9]{5,15}/i); return m&&/\d{3}/.test(m[0])?m[0].toUpperCase():""; }
+  if(kind==="email"){ const m=s.replace(/\s+/g,"").match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/); return m?m[0].toLowerCase():""; }
+  if(kind==="date") return ocrDate(s);
+  s=s.replace(/^[\s=\-—–_.,:;|«»()]+|[\s=\-—–_.,:;|«»()]+$/g,"").replace(/\(.*$/,"").trim();
+  const letters=(s.match(/[A-Za-zء-ي]/g)||[]).length; return letters>=3?s.slice(0,120):""; }
+function wordsText(ws){ const ar=ws.some(w=>/[ء-ي]/.test(w.t)); return (ar?ws.slice().sort((a,b)=>b.x0-a.x0):ws.slice().sort((a,b)=>a.x0-b.x0)).map(w=>w.t).join(" "); }
+function parseEmpOcr(pages){
+  const out={};
+  const labNorm=OCR_LABELS.map(o=>({k:o[0],lb:o[1][0],kind:o[2],mode:o[3],n:o[1][0].split(/\s+/).filter(x=>x!=="/").length}));
+  pages.forEach((pg,pi)=>{ const W=pg.w, lines=ocrLines(pg.words);
+    lines.forEach((ln,li)=>{
+      const cands=[];
+      for(let i=0;i<ln.ws.length;i++) for(let n=1;n<=Math.min(5,ln.ws.length-i);n++){ const grp=ln.ws.slice(i,i+n), txt=grp.map(w=>w.t).join(" ");
+        labNorm.forEach(L=>{ if(Math.abs(n-L.n)>1) return; const sc=simil(txt,L.lb), th=arNorm(L.lb).length<=6?0.84:0.74; if(sc>=th) cands.push({L,i,n,grp,sc}); }); }
+      cands.sort((a,b)=>b.sc-a.sc||b.n-a.n);
+      const used=new Set(), taken=new Set(), picked=[];
+      cands.forEach(c=>{ if(taken.has(c.L.k)) return; for(let j=c.i;j<c.i+c.n;j++) if(used.has(j)) return; for(let j=c.i;j<c.i+c.n;j++) used.add(j); taken.add(c.L.k); picked.push(c); });
+      picked.forEach(c=>{ const {L,grp}=c; if(out[L.k]) return; if(L.mode==="below"){ if(pi!==0) return; } else if(pi===0&&L.k!=="no") return;
+        const lx0=Math.min(...grp.map(w=>w.x0)), lx1=Math.max(...grp.map(w=>w.x1));
+        let vals;
+        if(L.mode==="below"){ const nx=lines.slice(li+1).find(l=>l.cy>ln.cy+ln.h*0.8); if(!nx) return; vals=nx.ws.filter(w=>w.x1<=lx1+W*0.03&&w.x0>=lx1-W*0.33); }
+        else { const leftLabs=picked.filter(o=>o!==c).map(o=>Math.max(...o.grp.map(w=>w.x1))).filter(x=>x<=lx0);
+          const bound=leftLabs.length?Math.max(...leftLabs):(lx0>W*0.5?W*0.47:0);
+          vals=ln.ws.filter((w,j)=>!used.has(j)&&w.x1<=lx0+2&&w.x0>=bound-2); }
+        const v=cleanVal(wordsText(vals),L.kind); if(v) out[L.k]=v; });
+      /* the template prints two fields per row; when OCR misreads one label, its partner on the row tells which field it is */
+      if (pi>0) OCR_PAIRS.forEach(([rk,lk])=>{ const has=k=>picked.some(c=>c.L.k===k);
+        if (has(lk)&&!has(rk)&&rk&&!out[rk]){ const L=labNorm.find(x=>x.k===rk), v=cleanVal(wordsText(ln.ws.filter((w,j)=>!used.has(j)&&w.x0>=W*0.47&&w.x1<=W*0.84)),L.kind); if(v) out[rk]=v; }
+        if (has(rk)&&!has(lk)&&lk&&!out[lk]){ const L=labNorm.find(x=>x.k===lk), v=cleanVal(wordsText(ln.ws.filter((w,j)=>!used.has(j)&&w.x1<=W*0.37)),L.kind); if(v) out[lk]=v; } }); }); });
+  if(!out.name&&out.nameEn) out.name=out.nameEn; delete out.nameEn;
+  return out;
+}
+
+let TESS=null, TWORKER=null;
+function loadTess(){ if(TESS) return TESS; TESS=new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"; sc.onload=()=>res(window.Tesseract); sc.onerror=()=>{ TESS=null; rej(new Error("lib")); }; document.head.appendChild(sc); }); return TESS; }
+function ocrStatus(msg){ $("sheet").innerHTML=`<h2 style="font-size:18px">${T("قراءة ملف الموظف")}</h2><p class="sub" style="margin:8px 0 0">${esc(msg)}</p><div class="bar" style="margin-top:14px"><i id="ocrBar" style="width:${Math.round((S.ocrProg||0)*100)}%"></i></div>`; $("modal").classList.add("on"); }
+async function getWorker(){ if(TWORKER) return TWORKER; const Tz=await loadTess();
+  TWORKER=await Tz.createWorker(["ara","eng"],1,{logger:m=>{ if(m&&m.status==="recognizing text"&&$("ocrBar")){ $("ocrBar").style.width=Math.round(((S.ocrPage||0)+m.progress)/(S.ocrPages||1)*100)+"%"; } }});
+  await TWORKER.setParameters({tessedit_pageseg_mode:"4"}); return TWORKER; }
+async function renderPdfPages(file,width,maxPages){ const lib=await loadPdfJs(), doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise, out=[];
+  for(let i=1;i<=Math.min(doc.numPages,maxPages);i++){ const pg=await doc.getPage(i), v0=pg.getViewport({scale:1}), vp=pg.getViewport({scale:width/v0.width}), c=document.createElement("canvas");
+    c.width=Math.round(vp.width); c.height=Math.round(vp.height); const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); await pg.render({canvasContext:ctx,viewport:vp}).promise; out.push(c); }
+  return {canvases:out,total:doc.numPages}; }
+function cropPhoto(c){ /* the employee-file template puts the photo at the top corner of page 1 */
+  const x0=Math.round(c.width*0.688), y0=Math.round(c.height*0.085), w=Math.round(c.width*0.248), h=Math.round(c.height*0.224), t=document.createElement("canvas"), k=Math.min(1,320/w);
+  t.width=Math.round(w*k); t.height=Math.round(h*k); t.getContext("2d").drawImage(c,x0,y0,w,h,0,0,t.width,t.height);
+  const px=t.getContext("2d").getImageData(0,0,t.width,t.height).data; let sum=0,sq=0,n=0; for(let i=0;i<px.length;i+=16){ const v=(px[i]+px[i+1]+px[i+2])/3; sum+=v; sq+=v*v; n++; }
+  const mean=sum/n, sd=Math.sqrt(Math.max(sq/n-mean*mean,0)); return sd>25 ? t.toDataURL("image/jpeg",0.7) : ""; }
+async function readEmpPdf(file){
+  S.ocrProg=0; ocrStatus(T("جارٍ فتح الملف…"));
+  const hi=await renderPdfPages(file,2480,3), pages=[];
+  ocrStatus(T("جارٍ تجهيز القراءة… (أول مرة تأخذ وقتاً أطول)"));
+  const wk=await getWorker(); S.ocrPages=Math.min(hi.canvases.length,2);
+  for(let i=0;i<S.ocrPages;i++){ S.ocrPage=i; ocrStatus(T("جارٍ قراءة الصفحة {a} من {b}…",{a:i+1,b:S.ocrPages})); const r=await wk.recognize(hi.canvases[i]); pages.push({w:hi.canvases[i].width,h:hi.canvases[i].height,words:r.data.words||[]}); }
+  const f=parseEmpOcr(pages), photo=hi.canvases[0]?cropPhoto(hi.canvases[0]):"";
+  ocrStatus(T("جارٍ تجهيز المستند…"));
+  const att=await pdfToImages(file);
+  const g=nameFromFile(file.name); if(!f.no&&g.no) f.no=g.no; if(!f.name&&g.name) f.name=g.name;
+  return {fields:f,photo,att,file}; }
+async function nextOcr(){
+  const q=S.ocrQueue||[]; if(!q.length){ closeModal(); if(TWORKER){ try{ await TWORKER.terminate(); }catch(e){} TWORKER=null; } return; }
+  const item=q.shift(); let res;
+  try{ res=await readEmpPdf(item.file); }catch(e){ closeModal(); toast(T(e&&e.message==="lib"?"تعذّر تحميل أداة القراءة. تأكد من الاتصال بالإنترنت.":"تعذّر قراءة ملف PDF.")); return nextOcr(); }
+  closeModal();
+  const f=res.fields, list=Object.keys(S.employees);
+  let id=item.id||(f.no?list.find(k=>canonKey(S.employees[k].no||"")===canonKey(f.no)):null);
+  if(!id&&f.name) id=list.find(k=>canonKey(S.employees[k].name||"")===canonKey(f.name));
+  const alias=(S.settings.branchAlias||{})[canonKey(f.branch||"")]; const rawBranch=f.branch||""; if(alias) f.branch=alias;
+  const base=id?clone(S.employees[id]):{}; const e=Object.assign(base,f); if(res.photo) e.photo=res.photo; if(id) e.id=id; if(!e.branch&&selBranch()) e.branch=selBranch();
+  S.ocrPending={file:res.file,att:res.att,rawBranch,found:Object.keys(f).length,left:q.length};
+  S.empEdit=e; S.empOpen=null; S.tab="profile"; render(true); window.scrollTo(0,0);
+}
+function queueOcr(files,id){ if(!files.length||!S.db) return; S.ocrQueue=(S.ocrQueue||[]).concat(files.map(file=>({file,id}))); if(!S.ocrPending&&!S.ocrBusy){ S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } }
+
 function vMore(){
   const p=S.settings.perms||{};
   let h=`<h1>${T("المزيد")}</h1><p class="sub">${T(S.admin?"إعدادات المدير وصلاحيات الموظفين":"حسابك في وضع الموظف، للعرض فقط")}</p><div class="stack">`;
@@ -1815,8 +1906,8 @@ $("fileOrder").addEventListener("change",e=>onFile("order",e.target));
 $("fileStock").addEventListener("change",e=>onFile("stock",e.target));
 $("filePrice").addEventListener("change",e=>onFile("price",e.target));
 $("fileEmpXls").addEventListener("change",e=>onFile("empxls",e.target));
-$("fileEmpPdfs").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length&&isAdmin()) uploadManyPdfs(fs); });
-$("fileEmpPdf").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) uploadEmpPdf(f); });
+$("fileEmpPdfs").addEventListener("change",e=>{ const fs=[...e.target.files]; e.target.value=""; if(fs.length&&isAdmin()) queueOcr(fs,null); });
+$("fileEmpPdf").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) queueOcr([f],S.empOpen); });
 
 /* ---------- export ---------- */
 async function downloadReport(){
@@ -1900,12 +1991,16 @@ document.addEventListener("click",async e=>{
   else if (act==="upEmpPdfs") $("fileEmpPdfs").click();
   else if (act==="newEmp"){ S.empEdit={branch:selBranch()||""}; render(true); window.scrollTo(0,0); }
   else if (act==="editEmp"){ const ee=S.employees[S.empOpen]; if(ee){ S.empEdit=Object.assign({id:S.empOpen},clone(ee)); render(true); window.scrollTo(0,0); } }
-  else if (act==="cancelEmp"){ S.empEdit=null; render(true); }
+  else if (act==="cancelEmp"){ S.empEdit=null; if(S.ocrPending){ S.ocrPending=null; S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } render(true); }
   else if (act==="backEmp"){ S.empOpen=null; S.docsFor=null; render(true); }
   else if (act==="saveEmp2"){ const d={}; document.querySelectorAll("[data-ef]").forEach(i=>{ const v=i.value.trim(); if(v) d[i.dataset.ef]=i.dataset.ef==="email"?v.toLowerCase():v.slice(0,i.dataset.ef==="notes"?2000:120); });
-    if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey;
+    if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey; if(S.empEdit.photo) d.photo=S.empEdit.photo;
+    const P=S.ocrPending;
     if(await save("employees",id,d)){ const oldEmail=String((S.empEdit.email)||"").toLowerCase(); if(S.db&&S.empEdit.id&&oldEmail!==(d.email||"")){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.update({email:d.email||""}); }catch(e){} }
-      S.empEdit=null; S.empOpen=id; S.docsFor=null; render(true); toast(T("تم حفظ بيانات الموظف.")); } }
+      if(P){ try{ await attachPdf(id,d,P.file,P.att); }catch(e){ toast(T("تعذّر حفظ الملف. قد تكون المساحة ممتلئة.")); }
+        if(P.rawBranch&&d.branch&&P.rawBranch!==d.branch){ const s8=clone(S.settings); s8.branchAlias=Object.assign({},s8.branchAlias,{[canonKey(P.rawBranch)]:d.branch}); await save("settings","main",s8); } }
+      S.empEdit=null; S.empOpen=id; S.docsFor=null; S.ocrPending=null; render(true); toast(T("تم حفظ بيانات الموظف."));
+      if(P&&(S.ocrQueue||[]).length){ S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } } }
   else if (act==="delEmp2"){ if(b.dataset.c){ const id=S.empOpen; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.delete(); }catch(e){} } S.empOpen=null; removeDoc("employees",id); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="delEmpDoc"){ if(b.dataset.c){ const fn=b.dataset.file; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",S.empOpen).get(); for(const x of sn.docs) if((x.data().file||"")===fn) await x.ref.delete(); }catch(e){} } S.docsFor=null; render(true); toast(T("تم حذف الملف.")); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="saveLimits"){ const s6=clone(S.settings); s6.taskLimits={};
