@@ -442,6 +442,13 @@ const EN = {
 "مرتبط بحساب الدخول: {n}":"Linked to sign-in account: {n}","الإيميل هو اللي يربط الملف بحساب الموظف.":"The email is what links the file to the employee's account.",
 "الشهادة الصحية":"Health certificate","رفع الشهادة الصحية":"Upload health certificate","لا توجد شهادة صحية مرفوعة.":"No health certificate uploaded.","تم رفع الشهادة الصحية.":"Health certificate uploaded.","تعذّر رفع الشهادة ({c}).":"Couldn't upload the certificate ({c}).","مستندات أخرى":"Other documents",
 "تم ربط ملف الموظف «{n}» بهذا الحساب.":"The employee file \"{n}\" was linked to this account.",
+"أعلى 5 منتجات أساسية":"Top 5 core products","أقل 5 منتجات أساسية":"Bottom 5 core products","الفروع: أعلى وأقل 5 منتجات أساسية":"Branches: top and bottom 5 core products",
+"المنتجات الأساسية":"Core products","أساسي":"Core","حفظ المنتجات الأساسية":"Save core products","تم حفظ المنتجات الأساسية.":"Core products saved.","تحديد الكل":"Select all","إلغاء الكل":"Clear all",
+"الترتيب على المنتجات الأساسية فقط ({n} منتج). المنتج الأساسي اللي ما انباع في الفرع يظهر بصفر.":"Ranking uses core products only ({n} products). A core product not sold in a branch shows as zero.",
+"لم تُحدد منتجات أساسية بعد، فالترتيب على كل المنتجات. حددها بعلامة الصح في جدول كل المنتجات.":"No core products chosen yet, so ranking uses all products. Tick them in the All products table.",
+"لا يوجد ملف منتجات لهذا الفرع":"No products file for this branch","إذا كان في الملف عمود الفرع يُحفظ كل فرع لحاله، ويظهر لكل موظف فرعه فقط.":"If the file has a branch column each branch is saved separately, and each employee sees only their branch.",
+"تم تحليل {n} منتج على {b} فرع لشهر {m}.":"Analysed {n} products across {b} branch(es) for {m}.",
+"الأعلى":"Top","الأقل":"Bottom",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -513,7 +520,7 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("on"
 const S = {
   admin:false, preview:false, tab:"home", month: mkOf(now.getFullYear(), now.getMonth()+1),
   settings:{perms:{sales:true,menu:true,waste:true,reviews:true}, reviewsUrl:""},
-  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, employees:{}, empdocs:null, docsFor:null, empOpen:null, empEdit:null, empQ:"", me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
+  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, employees:{}, menub:{}, empdocs:null, docsFor:null, empOpen:null, empEdit:null, empQ:"", me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
 };
 try { S.taskLocal = JSON.parse(localStorage.getItem("7g-tasks") || "{}") || {}; S.taskBy = localStorage.getItem("7g-by") || ""; } catch(e){ S.taskLocal={}; }
 try { S.empLocal = JSON.parse(localStorage.getItem("7g-emp") || "{}") || {}; } catch(e){ S.empLocal={}; }
@@ -791,28 +798,38 @@ function vWaste(){
   h+=`<div class="card"><div class="card-h"><h2>${T("كل الأصناف")}</h2><span class="note">${T("مرتبة من الأعلى تالفاً")}</span></div><div class="tw"><table><thead><tr><th>${T("الصنف")}</th><th class="n">${T("الاستلام")}</th><th class="n">${T("التالف")}</th><th class="n">${T("النسبة")}</th><th class="n">${T("القيمة")}</th><th></th></tr></thead><tbody>${ws.sorted.map(i=>{const r=i.r>0?i.w/i.r:null;const c=r==null?"":r>0.10?"bad":r>0.05?"warn":"";return `<tr><td>${esc(i.n)}</td><td class="n">${i.r?qty(i.r):"—"}</td><td class="n">${qty(i.w)}</td><td class="n">${r!=null?pct(r):"—"}</td><td class="n">${i.v?money(i.v):"—"}</td><td>${c?`<span class="pill ${c}">${T(c==="bad"?"مرتفع":"متابعة")}</span>`:""}</td></tr>`}).join("")}</tbody></table></div>${d.count>ws.sorted.length?`<p class="note">${T("يعرض أعلى {a} صنف من {b}. الإجماليات تشمل الكل.",{a:N(ws.sorted.length),b:N(d.count)})}</p>`:""}</div>`;
   return h+"</div>";
 }
-function menuStats(mk){
-  const doc=S.menu[mk]; if(!doc) return null;
+const menubDocs = mk => Object.values(S.menub||{}).filter(d=>d&&d.mk===mk&&d.branch).sort((a,b)=>String(a.branch).localeCompare(String(b.branch)));
+const coreSet = () => new Set((S.settings.coreProducts||[]).map(canonKey));
+function menuStats(mk,branch){
+  const doc = branch ? menubDocs(mk).find(d=>d.branch===branch) : S.menu[mk]; if(!doc) return null;
   const hasQ=(doc.totalQty||0)>0, hasV=(doc.totalVal||0)>0;
   const by = (S.menuBy==="q"&&hasQ)||(S.menuBy==="v"&&hasV) ? S.menuBy : (hasQ?"q":"v");
   const sorted=(doc.items||[]).slice().sort((a,b)=>(b[by]||0)-(a[by]||0));
-  const n=sorted.length, total=by==="q"?doc.totalQty:doc.totalVal;
-  return {doc,hasQ,hasV,by,sorted,total,top:sorted.slice(0,5),bottom:sorted.slice(Math.max(5,n-5)).reverse()};
+  const core=coreSet(); let pool=sorted;
+  if (core.size){ pool=sorted.filter(i=>core.has(canonKey(i.n))); const have=new Set(pool.map(i=>canonKey(i.n)));
+    (S.settings.coreProducts||[]).forEach(n=>{ if(!have.has(canonKey(n))) pool.push({n,q:0,v:0}); }); }
+  const n=pool.length, total=by==="q"?doc.totalQty:doc.totalVal;
+  return {doc,hasQ,hasV,by,sorted,pool,core:core.size,total,top:pool.slice(0,5),bottom:pool.slice(Math.max(0,n-5)).reverse()};
 }
 function vMenu(){
-  const ms=menuStats(S.month), a=isAdmin();
-  let h=`<h1>${T("تحليل القائمة")}</h1><p class="sub">${T("أعلى وأقل المنتجات مبيعاً")} · ${ML()}${ms&&ms.doc.file?` · ${T("الملف: {f}",{f:esc(ms.doc.file)})}`:""}</p><div class="stack">`;
-  if (a) h+=`<div class="card soft"><div class="row"><button class="btn pri" data-act="upMenu">${T("رفع ملف المنتجات")}</button>${ms&&S.dl?`<button class="btn" data-act="dlReport">${T("تنزيل التقرير Excel")}</button>`:""}${ms?`<button class="btn" data-act="delMenu">${T("حذف بيانات الشهر")}</button>`:""}</div><p class="note" style="margin:10px 0 0">${T("الملف يُحفظ على الشهر المختار في الأعلى ({m}). يحتاج اسم المنتج مع الكمية المباعة أو مبلغ المبيعات.",{m:ML()})}</p></div>`;
-  if (!ms) { h+=`<div class="card soft empty"><b>${T("لا يوجد ملف منتجات لهذا الشهر")}</b>${T(a?"ارفع ملف Excel لمبيعات المنتجات وسيظهر التحليل هنا.":"بانتظار رفع المدير للملف.")}</div>`; return h+"</div>"; }
+  const a=isAdmin(), b=selBranch(), ms=menuStats(S.month,b);
+  let h=`<h1>${T("تحليل القائمة")}</h1><p class="sub">${T("أعلى وأقل المنتجات مبيعاً")} · ${ML()}${b?" · "+esc(b):""}${ms&&ms.doc.file?` · ${T("الملف: {f}",{f:esc(ms.doc.file)})}`:""}</p><div class="stack">`;
+  if (a) h+=`<div class="card soft"><div class="row"><button class="btn pri" data-act="upMenu">${T("رفع ملف المنتجات")}</button>${ms&&S.dl?`<button class="btn" data-act="dlReport">${T("تنزيل التقرير Excel")}</button>`:""}${ms?`<button class="btn" data-act="delMenu">${T(b?"حذف بيانات الفرع":"حذف بيانات الشهر")}</button>`:""}</div><p class="note" style="margin:10px 0 0">${T("الملف يُحفظ على الشهر المختار في الأعلى ({m}). يحتاج اسم المنتج مع الكمية المباعة أو مبلغ المبيعات.",{m:ML()})} ${T("إذا كان في الملف عمود الفرع يُحفظ كل فرع لحاله، ويظهر لكل موظف فرعه فقط.")}</p></div>`;
+  if (!ms) { h+=`<div class="card soft empty"><b>${T(b?"لا يوجد ملف منتجات لهذا الفرع":"لا يوجد ملف منتجات لهذا الشهر")}</b>${T(a?"ارفع ملف Excel لمبيعات المنتجات وسيظهر التحليل هنا.":"بانتظار رفع المدير للملف.")}</div>`; return h+"</div>"; }
   const d=ms.doc;
   h+=`<div class="grid g3">${kpi(T("عدد المنتجات"),N(nf0.format(d.count||ms.sorted.length)))}${kpi(T("إجمالي الكمية المباعة"),ms.hasQ?qty(d.totalQty):"—")}${kpi(T("إجمالي مبيعات المنتجات"),ms.hasV?money(d.totalVal)+SAR():"—")}</div>`;
   if (ms.hasQ&&ms.hasV) h+=`<div class="row"><span class="note">${T("الترتيب حسب")}</span><div class="seg"><button data-menuby="q" class="${ms.by==="q"?"on":""}">${T("الكمية")}</button><button data-menuby="v" class="${ms.by==="v"?"on":""}">${T("المبلغ")}</button></div></div>`;
-  const mx=(ms.top[0]||{})[ms.by]||1;
-  const list=(arr,start,down)=>`<div class="tw"><table><thead><tr><th>#</th><th>${T("المنتج")}</th>${ms.hasQ?`<th class="n">${T("الكمية")}</th>`:""}${ms.hasV?`<th class="n">${T("المبلغ")}</th>`:""}<th class="n">${T("الحصة")}</th></tr></thead><tbody>${arr.map((i,k)=>`<tr><td class="num">${down?start-k:start+k}</td><td style="white-space:normal;min-width:120px">${esc(i.n)}<div class="bar" style="margin-top:4px"><i style="width:${Math.max((i[ms.by]||0)/mx*100,1)}%"></i></div></td>${ms.hasQ?`<td class="n">${qty(i.q)}</td>`:""}${ms.hasV?`<td class="n">${money(i.v)}</td>`:""}<td class="n">${ms.total>0?pct((i[ms.by]||0)/ms.total):"—"}</td></tr>`).join("")}</tbody></table></div>`;
-  const n=ms.sorted.length;
-  h+=`<div class="grid g2"><div class="card"><div class="card-h"><h2>${T("أعلى 5 منتجات مبيعاً")}</h2><span class="pill good">${T(ms.by==="q"?"الكمية":"المبلغ")}</span></div>${list(ms.top,1,false)}</div>`;
-  h+= ms.bottom.length ? `<div class="card"><div class="card-h"><h2>${T("أقل 5 منتجات مبيعاً")}</h2><span class="pill bad">${T(ms.by==="q"?"الكمية":"المبلغ")}</span></div>${list(ms.bottom,n,true)}</div></div>` : `</div>`;
-  h+=`<div class="card"><div class="card-h"><h2>${T("كل المنتجات")}</h2><span class="note">${T("مرتبة من الأعلى مبيعاً")}</span></div><div class="tw" style="max-height:420px;overflow-y:auto">${list(ms.sorted,1,false).replace('<div class="tw">',"<div>")}</div>${d.count>n?`<p class="note">${T("يعرض {a} منتج من {b}. الإجماليات تشمل الكل.",{a:N(n),b:N(d.count)})}</p>`:""}</div>`;
+  h+=`<p class="note" style="margin:0">${ms.core?T("الترتيب على المنتجات الأساسية فقط ({n} منتج). المنتج الأساسي اللي ما انباع في الفرع يظهر بصفر.",{n:N(ms.core)}):(a?T("لم تُحدد منتجات أساسية بعد، فالترتيب على كل المنتجات. حددها بعلامة الصح في جدول كل المنتجات."):"")}</p>`;
+  const mx=(ms.top[0]||{})[ms.by]||1, core=coreSet();
+  const list=(arr,start,down,pick)=>`<div class="tw"><table><thead><tr><th>#</th>${pick?`<th>${T("أساسي")}</th>`:""}<th>${T("المنتج")}</th>${ms.hasQ?`<th class="n">${T("الكمية")}</th>`:""}${ms.hasV?`<th class="n">${T("المبلغ")}</th>`:""}<th class="n">${T("الحصة")}</th></tr></thead><tbody>${arr.map((i,k)=>`<tr><td class="num">${down?start-k:start+k}</td>${pick?`<td><input type="checkbox" data-core="${esc(i.n)}" ${core.has(canonKey(i.n))?"checked":""} aria-label="${T("أساسي")}" style="width:18px;height:18px;accent-color:var(--brand)"></td>`:""}<td style="white-space:normal;min-width:120px">${esc(i.n)}<div class="bar" style="margin-top:4px"><i style="width:${Math.max((i[ms.by]||0)/mx*100,1)}%"></i></div></td>${ms.hasQ?`<td class="n">${qty(i.q)}</td>`:""}${ms.hasV?`<td class="n">${money(i.v)}</td>`:""}<td class="n">${ms.total>0?pct((i[ms.by]||0)/ms.total):"—"}</td></tr>`).join("")}</tbody></table></div>`;
+  const n=ms.pool.length, tt=T(ms.core?"أعلى 5 منتجات أساسية":"أعلى 5 منتجات مبيعاً"), bt=T(ms.core?"أقل 5 منتجات أساسية":"أقل 5 منتجات مبيعاً");
+  h+=`<div class="grid g2"><div class="card"><div class="card-h"><h2>${tt}</h2><span class="pill good">${T(ms.by==="q"?"الكمية":"المبلغ")}</span></div>${list(ms.top,1,false)}</div>`;
+  h+= ms.bottom.length ? `<div class="card"><div class="card-h"><h2>${bt}</h2><span class="pill bad">${T(ms.by==="q"?"الكمية":"المبلغ")}</span></div>${list(ms.bottom,n,true)}</div></div>` : `</div>`;
+  /* every branch side by side when looking at all branches */
+  const bd=menubDocs(S.month);
+  if (!b && bd.length){ h+=`<div class="card"><div class="card-h"><h2>${T("الفروع: أعلى وأقل 5 منتجات أساسية")}</h2></div><div class="grid g2">${bd.map(x=>{ const st=menuStats(S.month,x.branch); if(!st) return ""; const mini=(arr,cls)=>`<ol style="margin:4px 0 0;padding-inline-start:20px">${arr.map(i=>`<li style="margin:3px 0"><span>${esc(i.n)}</span> <span class="note num">${st.by==="q"?nf0.format(i.q||0):nf0.format(i.v||0)}</span></li>`).join("")}</ol>`;
+      return `<div class="card soft"><div class="card-h" style="margin-bottom:6px"><h2>${esc(x.branch)}</h2><button class="btn sm" data-br="${esc(x.branch)}">${T("عرض")}</button></div><div class="grid g2" style="gap:10px"><div><span class="pill good">${T("الأعلى")}</span>${mini(st.top)}</div><div><span class="pill bad">${T("الأقل")}</span>${mini(st.bottom)}</div></div></div>`; }).join("")}</div></div>`; }
+  h+=`<div class="card"><div class="card-h"><h2>${T("كل المنتجات")}</h2><span class="note">${T("مرتبة من الأعلى مبيعاً")}</span></div><div class="tw" style="max-height:460px;overflow-y:auto">${list(ms.sorted,1,false,a&&!b).replace('<div class="tw">',"<div>")}</div>${a&&!b?`<div class="row" style="margin-top:12px"><button class="btn pri" data-act="saveCore">${T("حفظ المنتجات الأساسية")}</button><button class="btn sm" data-act="coreAll">${T("تحديد الكل")}</button><button class="btn sm" data-act="coreNone">${T("إلغاء الكل")}</button></div>`:""}</div>`;
   return h+"</div>";
 }
 const stars = r => "★".repeat(Math.round(r))+"☆".repeat(5-Math.round(r));
@@ -1905,23 +1922,24 @@ async function importWaste(m,rows,file){
 }
 async function importMenu(m,rows,file){
   if (m.qty<0 && m.amount<0){ toast(T("اختر عمود الكمية أو عمود المبلغ على الأقل.")); throw shownErr(); }
-  const map=new Map();
+  const hasB=m.branch>=0, all=new Map(), byB=new Map();
+  const addTo=(map,key,q,v)=>{ const o=map.get(key)||{n:key,q:0,v:0}; o.q+=q||0; o.v+=v||0; map.set(key,o); };
   for(const r of rows){ if(!r) continue;
     const name=r[m.item]==null?"":String(r[m.item]).trim(); if(!name||TOTAL_ROW.test(name)) continue;
     const q=m.qty>=0?toNum(r[m.qty]):null, v=m.amount>=0?toNum(r[m.amount]):null;
     if (q==null&&v==null) continue;
-    const key=name.slice(0,80); const o=map.get(key)||{n:key,q:0,v:0};
-    o.q+=q||0; o.v+=v||0; map.set(key,o);
-  }
-  const all=[...map.values()];
-  if(!all.length){ toast(T("لم أجد منتجات صالحة. راجع ربط الأعمدة.")); throw shownErr(); }
-  const tq=all.reduce((a,i)=>a+i.q,0), tv=all.reduce((a,i)=>a+i.v,0), by=tq>0?"q":"v";
-  all.sort((a,b)=>b[by]-a[by]);
-  const keep=all.length>800?all.slice(0,700).concat(all.slice(-100)):all;
-  const ok=await save("menu",S.month,{totalQty:r2(tq),totalVal:r2(tv),count:all.length,items:keep.map(i=>({n:i.n,q:r2(i.q),v:r2(i.v)})),file:String(file).slice(0,80),updatedAt:todayKey});
-  if(!ok) throw shownErr();
-  render(true); toast(T("تم تحليل {n} منتج لشهر {m}.",{n:all.length,m:mLabel(S.month)}));
+    const key=name.slice(0,80); addTo(all,key,q,v);
+    if (hasB){ const raw=brName(r[m.branch]), bn=mapBranch(raw)||raw; if(!byB.has(bn)) byB.set(bn,new Map()); addTo(byB.get(bn),key,q,v); } }
+  if(!all.size){ toast(T("لم أجد منتجات صالحة. راجع ربط الأعمدة.")); throw shownErr(); }
+  const pack=map=>{ const arr=[...map.values()], tq=arr.reduce((a,i)=>a+i.q,0), tv=arr.reduce((a,i)=>a+i.v,0), by=tq>0?"q":"v"; arr.sort((a,b)=>b[by]-a[by]);
+    const keep=arr.length>800?arr.slice(0,700).concat(arr.slice(-100)):arr; return {totalQty:r2(tq),totalVal:r2(tv),count:arr.length,items:keep.map(i=>({n:i.n,q:r2(i.q),v:r2(i.v)}))}; };
+  const fn=String(file).slice(0,80);
+  if(!await save("menu",S.month,Object.assign(pack(all),{file:fn,updatedAt:todayKey}))) throw shownErr();
+  if (hasB){ for(const d of menubDocs(S.month)) await removeQuiet("menub",S.month+"_"+bid(d.branch));
+    for(const [bn,map] of byB){ if(!await save("menub",S.month+"_"+bid(bn),Object.assign(pack(map),{mk:S.month,branch:bn,file:fn,updatedAt:todayKey}))) throw shownErr(); } }
+  render(true); toast(hasB?T("تم تحليل {n} منتج على {b} فرع لشهر {m}.",{n:all.size,b:byB.size,m:mLabel(S.month)}):T("تم تحليل {n} منتج لشهر {m}.",{n:all.size,m:mLabel(S.month)}));
 }
+
 async function onFile(kind,input){
   const f=input.files[0]; input.value=""; if(!f) return;
   let sh; try{ sh=await readFile(f); }catch(e){ toast(T(e.message==="lib"?"تعذّر تحميل قارئ Excel. حدّث الصفحة.":"تعذّر قراءة الملف. تأكد أنه Excel أو CSV.")); return; }
@@ -1942,7 +1960,7 @@ async function onFile(kind,input){
     fields:[{key:"item",label:"المنتج",req:true},{key:"stock",label:"الستوك",req:true},{key:"branch",label:"الفرع"}],
     done:(m,rows)=>importStock(m,rows)});
   else if (kind==="menu") openMapper({title:T("استيراد المنتجات · {m}",{m:ML()}),file:f.name,rows:sh.rows,
-    fields:[{key:"item",label:"المنتج",req:true},{key:"qty",label:"الكمية المباعة"},{key:"amount",label:"مبلغ المبيعات"}],
+    fields:[{key:"item",label:"المنتج",req:true},{key:"qty",label:"الكمية المباعة"},{key:"amount",label:"مبلغ المبيعات"},{key:"branch",label:"الفرع"}],
     done:(m,rows)=>importMenu(m,rows,f.name)});
   else openMapper({title:T("استيراد التوالف · {m}",{m:ML()}),file:f.name,rows:sh.rows,
     fields:[{key:"item",label:"الصنف",req:true},{key:"waste",label:"كمية التالف",req:true},{key:"rec",label:"كمية الاستلام"},{key:"val",label:"قيمة التالف"},{key:"branch",label:"الفرع"}],
@@ -1971,7 +1989,7 @@ async function downloadReport(){
     if(B.rows.length) add([[T("الترتيب"),T("الفرع"),T("التارقت الشهري"),T("المفترض لين أمس"),T("المبيعات الصافية"),T("عدد الطلبات"),T("متوسط الفاتورة"),T("الفرق عن المفترض"),T("نسبة التحقيق"),T("نسبة الإنجاز من المفترض"),T("المتبقي للتارقت"),T("المطلوب يومياً"),T("الحالة")],...B.rows.map(x=>line(x,x.n)),line(B.tot,T("الإجمالي"))],T("الفروع"));
   }
   if (can("waste")) { const ws=wasteStats(mk,xb); if(ws) add([[T("الصنف"),T("الاستلام"),T("التالف"),T("النسبة %"),T("القيمة")],...ws.sorted.map(i=>[i.n,i.r,i.w,i.r>0?+(i.w/i.r*100).toFixed(2):"",i.v]),[],[T("الإجمالي"),ws.doc.recQty,ws.doc.wasteQty,ws.rate!=null?+(ws.rate*100).toFixed(2):"",ws.doc.wasteVal]],T("التوالف")); }
-  if (can("menu")) { const ms=menuStats(mk); if(ms) add([[T("المنتج"),T("الكمية"),T("المبلغ")],...ms.sorted.map(i=>[i.n,i.q,i.v]),[],[T("الإجمالي"),ms.doc.totalQty,ms.doc.totalVal]],T("القائمة")); }
+  if (can("menu")) { const ms=menuStats(mk,xb); if(ms) add([[T("المنتج"),T("الكمية"),T("المبلغ")],...ms.sorted.map(i=>[i.n,i.q,i.v]),[],[T("الإجمالي"),ms.doc.totalQty,ms.doc.totalVal]],T("القائمة")); }
   if(!wb.SheetNames.length){ toast(T("لا توجد بيانات للتنزيل.")); return; }
   if (rtl()) wb.Workbook={Views:[{RTL:true}]};
   try{ await S.dl.save({filename:`7grams-report-${mk}.xlsx`,data:XLSX.write(wb,{type:"array",bookType:"xlsx"})}); }
@@ -2099,7 +2117,9 @@ document.addEventListener("click",async e=>{
     if(fdv>0){ if(od2){ if(fileDays(od2)!==fdv){ const nd=clone(od2); nd.days=fdv; await save("orders",bid(ob2),nd); } } else s4.orderFileDays=fdv; }
     if(await save("settings","main",s4)){ render(true); toast(T("تم حفظ الإعدادات.")); } }
   else if (act==="upMenu") $("fileMenu").click();
-  else if (act==="delMenu"){ if(b.dataset.c){ removeDoc("menu",S.month); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
+  else if (act==="delMenu"){ if(b.dataset.c){ const mb2=selBranch(); if(mb2) await removeQuiet("menub",S.month+"_"+bid(mb2)); else { for(const d of menubDocs(S.month)) await removeQuiet("menub",S.month+"_"+bid(d.branch)); await removeQuiet("menu",S.month); } render(true); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
+  else if (act==="saveCore"){ const pick=[...document.querySelectorAll("[data-core]")].filter(x=>x.checked).map(x=>x.dataset.core); const s10=clone(S.settings); s10.coreProducts=pick; if(await save("settings","main",s10)){ render(true); toast(T("تم حفظ المنتجات الأساسية.")); } }
+  else if (act==="coreAll"||act==="coreNone"){ document.querySelectorAll("[data-core]").forEach(x=>x.checked=act==="coreAll"); }
   else if (act==="saveTarget"){ const v=toNum($("inTarget").value); if(v==null||v<0){ toast(T("أدخل رقم التارقت.")); return; }
     const d=clone(S.sales[S.month]); d.target=v; if(d.total==null){d.total=0;d.days={};d.branches={};}
     if(await save("sales",S.month,d)){ render(true); toast(T("تم حفظ التارقت.")); } }
@@ -2140,7 +2160,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
   firebase.initializeApp(cfg);
   const auth=firebase.auth(), fs=firebase.firestore(); S.fbAuth=auth;
   let unsubs=[];
-  const DATA=["employees","sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
+  const DATA=["employees","menub","sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
   auth.onAuthStateChanged(async u=>{
     unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[]; DATA.forEach(c=>S[c]={}); S.salesRank={}; S.me=null; S.admin=false; S.db=null; UNDO.length=0;
     if (!u){ S.auth="out"; S.email=""; S.ready=true; render(true); return; }
@@ -2152,11 +2172,11 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     const map=q=>{ const o={}; q.docs.forEach(d=>o[d.id]=clone(d.data())); return o; };
     const sub=(ref,cb)=>unsubs.push(ref.onSnapshot(cb,()=>{}));
     sub(fs.doc("settings/main"),sn=>{ if(sn.exists){ const d=clone(sn.data()); d.perms=Object.assign({sales:true,menu:true,waste:true,reviews:true},d.perms); S.settings=d; } render(); });
-    ["prices","menu"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
+    sub(fs.collection("prices"),q=>{ S.prices=map(q); render(); });
     S.docsFor=null; S.empdocs=null; S.empOpen=null; S.empEdit=null;
     if (S.admin){
       sub(fs.collection("employees"),q=>{ S.employees=map(q); render(); });
-      ["sales","waste","reviews","wasteb","orders","stock","staff","members"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
+      ["menu","menub","sales","waste","reviews","wasteb","orders","stock","staff","members"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("comments").orderBy("date","desc").limit(300),q=>{ S.comments=map(q); render(); });
       sub(fs.collection("empsales").orderBy("date","desc").limit(1500),q=>{ S.empsales=map(q); render(); });
       let pruned=false;
@@ -2167,7 +2187,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     } else {
       sub(fs.collection("employees").where("email","==",email),q=>{ S.employees=map(q); render(); });
       const b=me.branch; if(!b) return;
-      ["reviews","wasteb","comments","orders","stock","staff","empsales","tasklog"].forEach(c=>sub(fs.collection(c).where("branch","==",b),q=>{ S[c]=map(q); render(); }));
+      ["menub","reviews","wasteb","comments","orders","stock","staff","empsales","tasklog"].forEach(c=>sub(fs.collection(c).where("branch","==",b),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("salesb").where("branch","==",b),q=>{ const o={}, rk={}; q.docs.forEach(d=>{ const x=d.data(); o[x.month]={branches:{[b]:x.total||0},bt:{[b]:x.target||0},bd:{[b]:x.days||{}},bo:{[b]:x.orders||0},bod:{[b]:x.od||{}},days:x.days||{},file:x.file||""}; rk[x.month]={r:x.rk||0,n:x.rn||0}; }); S.sales=o; S.salesRank=rk; render(); });
     }
   });

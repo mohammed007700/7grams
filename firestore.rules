@@ -21,7 +21,8 @@ service cloud.firestore {
     // بيانات مشتركة لكل من له حساب: الإعدادات، الأسعار، تحليل القائمة
     match /settings/{id} { allow read: if isAdmin() || isStaff(); allow write: if isAdmin(); }
     match /prices/{id}   { allow read: if isAdmin() || isStaff(); allow write: if isAdmin(); }
-    match /menu/{id}     { allow read: if isAdmin() || isStaff(); allow write: if isAdmin(); }
+    match /menu/{id}     { allow read, write: if isAdmin(); }
+    match /menub/{id}    { allow read: if isAdmin() || mine(); allow write: if isAdmin(); }
     // بيانات كل الفروع مجتمعة: للمدير فقط
     match /sales/{id} { allow read, write: if isAdmin(); }
     match /waste/{id} { allow read, write: if isAdmin(); }
