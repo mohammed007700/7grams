@@ -106,6 +106,7 @@ td.od.z{color:var(--muted)}
 .pcap.gr{grid-column:1/-1;margin:0}
 .pcap .need{font-size:12.5px;color:var(--bad);font-weight:600}
 .pth{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.pdfpg{width:100%;border:1px solid var(--line);border-radius:10px;cursor:zoom-in;display:block}
 .cm{padding:10px 0;border-bottom:1px solid var(--line)}
 .cm:last-child{border-bottom:0}
 .cm .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
@@ -254,6 +255,8 @@ nav.tabs button.on::before{content:"";position:absolute;top:-1px;width:28px;heig
 <input type="file" id="fileOrder" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="fileStock" accept=".xlsx,.xls,.csv" hidden>
 <input type="file" id="filePrice" accept=".xlsx,.xls,.csv" hidden>
+<input type="file" id="fileEmpXls" accept=".xlsx,.xls,.csv" hidden>
+<input type="file" id="fileEmpPdf" accept="application/pdf,.pdf" hidden>
 <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -408,6 +411,14 @@ const EN = {
 "حسابك: {e}":"Your account: {e}","إضافة موظف":"Add staff member","الاسم":"Name","مدير (كل الفروع)":"Admin (all branches)","اختر الفرع":"Choose branch","إضافة":"Add","اكتب الاسم وإيميلاً صحيحاً واختر الفرع.":"Enter a name, a valid email and choose a branch.","تمت إضافة الموظف.":"Staff member added.",
 "الموظفون المضافون":"Added staff","دعوة بالإيميل":"Invite by email","نسخ الدعوة":"Copy invitation","لا يوجد موظفون مضافون بعد.":"No staff added yet.","دعوة لتطبيق 7 GRAMS":"Invitation to the 7 GRAMS app",
 "كل موظف يدخل بإيميله وكلمة مرور يختارها، ويرى فرعه والأقسام المحددة له فقط.":"Each staff member signs in with their email and a password they choose, and sees only their branch and the sections you allow.",
+"بياناتي":"My data","ملفات الموظفين":"Staff files","ملفك الوظيفي كما هو مسجل لدى الإدارة":"Your employee file as recorded by management","لم تُضف بياناتك بعد":"Your data has not been added yet","تواصل مع المدير لإضافة ملفك.":"Ask your manager to add your file.",
+"كل موظف يرى ملفه فقط في خانة «بياناتي»":"Each employee sees only their own file under \"My data\"","رفع ملف Excel":"Upload Excel file","رفع ملف PDF":"Upload PDF file","{n} موظف":"{n} staff",
+"ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».":"An Excel file adds or updates several employees at once (matched by employee number or email). A PDF is attached to one employee: open the employee, then \"Upload PDF file\".",
+"وثائق قاربت على الانتهاء":"Documents expiring soon","منتهية":"Expired","تنتهي خلال {n} يوم":"Expires in {n} days","بحث بالاسم أو الرقم":"Search by name or number","لا يوجد موظفون مطابقون.":"No matching staff.",
+"مدة الخدمة":"Length of service","{y} سنة و{m} شهر":"{y} yr {m} mo","انتهاء الشهادة الصحية":"Health certificate expiry","انتهاء الهوية / الإقامة":"ID / Iqama expiry","ملاحظات":"Notes","المستندات":"Documents","صفحة {n}":"Page {n}","حذف الملف":"Delete file","لا توجد مستندات مرفوعة.":"No documents uploaded.",
+"تعديل بيانات الموظف":"Edit employee data","رجوع للقائمة":"Back to list","استيراد بيانات الموظفين":"Import employee data","لم أجد موظفين في الملف. راجع ربط الأعمدة.":"No employees found in the file. Check the column matching.","تم حفظ {n} موظف ({u} تحديث).":"Saved {n} staff ({u} updated).",
+"جارٍ تجهيز الملف…":"Preparing the file…","تعذّر قراءة ملف PDF.":"Couldn't read the PDF file.","تعذّر حفظ الملف. قد تكون المساحة ممتلئة.":"Couldn't save the file. Storage may be full.","تم رفع الملف ({n} صفحة).":"File uploaded ({n} pages).","تم رفع أول {n} صفحة من الملف.":"Uploaded the first {n} pages of the file.",
+"اكتب اسم الموظف.":"Enter the employee name.","تم حفظ بيانات الموظف.":"Employee data saved.","تم حذف الملف.":"File deleted.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -468,13 +479,13 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("on"
 const S = {
   admin:false, preview:false, tab:"home", month: mkOf(now.getFullYear(), now.getMonth()+1),
   settings:{perms:{sales:true,menu:true,waste:true,reviews:true}, reviewsUrl:""},
-  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
+  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, employees:{}, empdocs:null, docsFor:null, empOpen:null, empEdit:null, empQ:"", me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
 };
 try { S.taskLocal = JSON.parse(localStorage.getItem("7g-tasks") || "{}") || {}; S.taskBy = localStorage.getItem("7g-by") || ""; } catch(e){ S.taskLocal={}; }
 try { S.empLocal = JSON.parse(localStorage.getItem("7g-emp") || "{}") || {}; } catch(e){ S.empLocal={}; }
 const isAdmin = () => S.admin && !S.preview;
 const staffEntry = () => (S.admin || !S.me) ? null : {b:S.me.branch||"",p:S.me.perms};
-const can = sec => { if (isAdmin()) return true; const e=staffEntry(); return e&&e.p ? e.p[sec]!==false : (S.settings.perms||{})[sec]!==false; };
+const can = sec => { if (isAdmin()||sec==="profile") return true; const e=staffEntry(); return e&&e.p ? e.p[sec]!==false : (S.settings.perms||{})[sec]!==false; };
 
 /* staff cannot read the all-branches sales document, so each branch gets its own copy */
 async function mirrorSales(mk,d){
@@ -1322,6 +1333,115 @@ async function taskAction(act){
     S.taskOpen=null; S.taskDraft=null; render(true);
     toast(T(st.issues?(shared?"تم الحفظ. فيه {n} ملاحظة تحتاج معالجة.":"تم الحفظ على هذا الجهاز فقط، وفيه {n} ملاحظة. انسخ النتيجة وأرسلها للمدير."):(shared?"تم حفظ المهمة.":"تم الحفظ على هذا الجهاز فقط. انسخ النتيجة وأرسلها للمدير."),{n:st.issues})); }
 }
+
+/* ---------- employee files (my data) ---------- */
+const EF=[
+ {k:"name",l:["Name","الاسم"],g:"p",re:/^name$|full ?name|employee ?name|الاسم|اسم الموظف/i,req:1},
+ {k:"no",l:["Employee number","الرقم الوظيفي"],g:"p",re:/emp.*(no|num|id|code)|staff ?(no|id)|الرقم الوظيفي|رقم الموظف/i},
+ {k:"nat",l:["Nationality","الجنسية"],g:"p",re:/national|الجنسية/i},
+ {k:"dob",l:["Date of birth","تاريخ الميلاد"],g:"p",t:"date",re:/birth|dob|الميلاد/i},
+ {k:"title",l:["Job title","المسمى الوظيفي"],g:"j",re:/title|position|job|المسمى|الوظيفة/i},
+ {k:"branch",l:["Branch","الفرع"],g:"j",re:/branch|store|location|الفرع|الموقع/i},
+ {k:"dept",l:["Department","الإدارة"],g:"j",re:/depart|الإدارة|القسم/i},
+ {k:"hire",l:["Hire date","تاريخ التعيين"],g:"j",t:"date",re:/hire|join|start|التعيين|المباشرة/i},
+ {k:"prob",l:["Probation end","نهاية التجربة"],g:"j",t:"date",re:/probation|التجربة/i},
+ {k:"cend",l:["Contract end","نهاية العقد"],g:"j",t:"date",x:1,re:/contract.*(end|exp)|نهاية العقد/i},
+ {k:"mgr",l:["Area manager","مدير المنطقة"],g:"j",re:/manager|مدير المنطقة/i},
+ {k:"company",l:["Company","الشركة التابع لها"],g:"j",re:/company|الشركة/i},
+ {k:"sponsor",l:["Sponsor","الكفيل"],g:"j",re:/sponsor|الكفيل/i},
+ {k:"status",l:["Status","الحالة"],g:"j",re:/status|الحالة/i},
+ {k:"idno",l:["ID / Iqama number","رقم الهوية / الإقامة"],g:"d",re:/iqama|^id|id ?(no|num)|الإقامة|الهوية/i},
+ {k:"idexp",l:["ID / Iqama expiry","انتهاء الهوية / الإقامة"],g:"d",t:"date",x:1,re:/(iqama|id).*(exp|end)|انتهاء (الهوية|الإقامة)/i},
+ {k:"passno",l:["Passport number","رقم الجواز"],g:"d",re:/passport ?(no|num)?$|رقم الجواز/i},
+ {k:"passexp",l:["Passport expiry","انتهاء الجواز"],g:"d",t:"date",x:1,re:/passport.*(exp|end)|انتهاء الجواز/i},
+ {k:"hcno",l:["Health certificate number","رقم الشهادة الصحية"],g:"d",re:/health.*(no|num|cert)|رقم الشهادة الصحية/i},
+ {k:"hcexp",l:["Health certificate expiry","انتهاء الشهادة الصحية"],g:"d",t:"date",x:1,re:/health.*(exp|end)|انتهاء الشهادة/i},
+ {k:"phone",l:["Mobile","الجوال"],g:"c",re:/mobile|phone|الجوال|الهاتف/i},
+ {k:"email",l:["Email","البريد الإلكتروني"],g:"c",t:"email",re:/e-?mail|البريد|الإيميل/i},
+ {k:"city",l:["City of residence","مدينة السكن"],g:"c",re:/city|المدينة|السكن/i},
+ {k:"emname",l:["Emergency contact","جهة اتصال للطوارئ"],g:"c",re:/emergency.*(name|contact)|الطوارئ/i},
+ {k:"emphone",l:["Emergency mobile","جوال الطوارئ"],g:"c",re:/emergency.*(phone|mobile)|جوال الطوارئ/i}
+];
+const EG=[["p",["Personal details","البيانات الشخصية"]],["j",["Job and contract","الوظيفة والعقد"]],["d",["Official documents","الوثائق الرسمية"]],["c",["Contact and emergency","التواصل والطوارئ"]]];
+const empKey = e => e.no ? "n"+canonKey(e.no) : e.email ? "e"+bid(e.email) : "x"+bid(e.name||Date.now());
+function fmtDate(v){ if(!v) return ""; const p=String(v).split("-"); if(p.length!==3) return String(v); return `${+p[2]} ${MONTHS[LANG][+p[1]-1]} ${p[0]}`; }
+function daysTo(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||"")) return null; return Math.round((Date.parse(v)-Date.parse(todayKey))/864e5); }
+function expAlerts(e){ return EF.filter(f=>f.x&&e[f.k]).map(f=>({f,d:daysTo(e[f.k])})).filter(a=>a.d!=null&&a.d<=60); }
+const expPill = a => a.d<0 ? `<span class="pill bad">${esc(L(a.f.l))}: ${T("منتهية")}</span>` : `<span class="pill ${a.d<=30?"bad":"warn"}">${esc(L(a.f.l))}: ${T("تنتهي خلال {n} يوم",{n:N(a.d)})}</span>`;
+function serviceText(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||"")) return ""; const a=new Date(v), b=new Date(todayKey); let m=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()<a.getDate()) m--; if(m<0) return ""; return T("{y} سنة و{m} شهر",{y:N(Math.floor(m/12)),m:N(m%12)}); }
+function myEmployee(){ const em=S.email; return Object.keys(S.employees).map(k=>Object.assign({id:k},S.employees[k])).find(e=>String(e.email||"").toLowerCase()===em)||null; }
+function loadDocs(e){ if(!S.db||!e) return; if(S.docsFor===e.id) return; S.docsFor=e.id; S.empdocs=null;
+  const q=S.admin ? S.db.collection("empdocs").where("emp","==",e.id) : S.db.collection("empdocs").where("email","==",S.email);
+  q.get().then(sn=>{ if(S.docsFor!==e.id) return; const list=sn.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d.emp===e.id).sort((x,y)=>(x.file||"").localeCompare(y.file||"")||(x.page-y.page)); S.empdocs=list; render(); }).catch(()=>{ S.empdocs=[]; render(); }); }
+function empCard(e,edit){
+  const al=expAlerts(e), sv=serviceText(e.hire);
+  let h=`<div class="card"><div class="card-h"><div><h2 style="font-size:19px">${esc(e.name||"")}</h2><div class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</div></div>${edit?`<div class="row"><button class="btn sm" data-act="editEmp">${T("تعديل")}</button><button class="btn sm" data-act="upEmpPdf">${T("رفع ملف PDF")}</button><button class="btn sm" data-act="delEmp2">${T("حذف")}</button></div>`:""}</div>`;
+  if (al.length) h+=`<div class="row" style="margin-bottom:12px">${al.map(expPill).join("")}</div>`;
+  if (sv) h+=`<div class="grid g3" style="margin-bottom:12px">${kpi(T("مدة الخدمة"),sv)}${e.hcexp?kpi(T("انتهاء الشهادة الصحية"),esc(fmtDate(e.hcexp))):""}${e.idexp?kpi(T("انتهاء الهوية / الإقامة"),esc(fmtDate(e.idexp))):""}</div>`;
+  EG.forEach(([g,gl])=>{ const fs=EF.filter(f=>f.g===g&&e[f.k]); if(!fs.length) return;
+    h+=`<div class="tgh" style="margin:10px 0 4px">${esc(L(gl))}</div><div class="tw"><table><tbody>${fs.map(f=>`<tr><td class="note" style="width:40%;white-space:normal">${esc(L(f.l))}</td><td style="white-space:normal;overflow-wrap:anywhere">${f.t==="date"?esc(fmtDate(e[f.k])):f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?`<bdi dir="ltr">${esc(e[f.k])}</bdi>`:esc(e[f.k])}</td></tr>`).join("")}</tbody></table></div>`; });
+  if (e.notes) h+=`<div class="tgh" style="margin:10px 0 4px">${T("ملاحظات")}</div><p style="margin:0;white-space:pre-wrap">${esc(e.notes)}</p>`;
+  h+=`</div>`;
+  loadDocs(e);
+  const docs=S.empdocs;
+  h+=`<div class="card"><div class="card-h"><h2>${T("المستندات")}</h2>${docs&&docs.length?`<span class="note num">${docs.length}</span>`:""}</div>${docs==null?`<p class="note" style="margin:0">${T("جارٍ التحميل…")}</p>`:docs.length?`<div class="stack">${docs.map(d=>`<figure style="margin:0"><img class="pdfpg" data-pg="${esc(d.id)}" alt="${esc(d.file||"")} ${d.page}" src="${esc(d.img)}"><figcaption class="note">${esc(d.file||"")} · ${T("صفحة {n}",{n:N(d.page)})}${edit?` <button class="btn sm" data-act="delEmpDoc" data-file="${esc(d.file||"")}">${T("حذف الملف")}</button>`:""}</figcaption></figure>`).filter((x,i,arr)=>true).join("")}</div>`:`<p class="note" style="margin:0">${T("لا توجد مستندات مرفوعة.")}</p>`}</div>`;
+  return h;
+}
+function empForm(e){
+  return `<div class="card soft"><div class="card-h"><h2>${T(e.id?"تعديل بيانات الموظف":"إضافة موظف")}</h2></div>${EG.map(([g,gl])=>`<div class="tgh" style="margin:12px 0 6px">${esc(L(gl))}</div><div class="grid g2">${EF.filter(f=>f.g===g).map(f=>`<div class="field"><label for="ef-${f.k}">${esc(L(f.l))}${f.req?"":" "+T("(اختياري)")}</label><input id="ef-${f.k}" data-ef="${f.k}" type="${f.t==="date"?"date":f.t==="email"?"email":"text"}" ${f.t==="email"||f.k==="phone"||f.k==="emphone"||/no$/.test(f.k)?'dir="ltr"':""} value="${esc(e[f.k]||"")}"></div>`).join("")}</div>`).join("")}
+    <div class="field" style="margin-top:12px"><label for="ef-notes">${T("ملاحظات")} ${T("(اختياري)")}</label><textarea id="ef-notes" data-ef="notes">${esc(e.notes||"")}</textarea></div>
+    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveEmp2">${T("حفظ")}</button><button class="btn" data-act="cancelEmp">${T("إلغاء")}</button></div></div>`;
+}
+function vProfile(){
+  const a=isAdmin();
+  if (!a){ const e=myEmployee();
+    let h=`<h1>${T("بياناتي")}</h1><p class="sub">${T("ملفك الوظيفي كما هو مسجل لدى الإدارة")}</p><div class="stack">`;
+    if (!e) return h+`<div class="card soft empty"><b>${T("لم تُضف بياناتك بعد")}</b>${T("تواصل مع المدير لإضافة ملفك.")}</div></div>`;
+    return h+empCard(e,false)+"</div>"; }
+  if (S.empEdit) return `<h1>${T("ملفات الموظفين")}</h1><div class="stack">${empForm(S.empEdit)}</div>`;
+  const list=Object.keys(S.employees).map(k=>Object.assign({id:k},S.employees[k]));
+  if (S.empOpen){ const e=list.find(x=>x.id===S.empOpen); if(e) return `<h1>${T("ملفات الموظفين")}</h1><div class="row" style="margin-bottom:12px"><button class="btn sm" data-act="backEmp">${T("رجوع للقائمة")}</button></div><div class="stack">${empCard(e,true)}</div>`; S.empOpen=null; }
+  const b=selBranch(), qv=(S.empQ||"").trim().toLowerCase();
+  const shown=list.filter(e=>(!b||e.branch===b)&&(!qv||[e.name,e.no,e.email,e.phone].some(x=>String(x||"").toLowerCase().includes(qv)))).sort((x,y)=>String(x.branch||"").localeCompare(String(y.branch||""))||String(x.name||"").localeCompare(String(y.name||"")));
+  const alerts=list.map(e=>({e,a:expAlerts(e)})).filter(x=>x.a.length);
+  let h=`<h1>${T("ملفات الموظفين")}</h1><p class="sub">${T("كل موظف يرى ملفه فقط في خانة «بياناتي»")}${b?" · "+esc(b):""}</p><div class="stack">
+    <div class="card soft"><div class="row"><button class="btn pri" data-act="newEmp">${T("إضافة موظف")}</button><button class="btn" data-act="upEmpXls">${T("رفع ملف Excel")}</button><span class="note">${T("{n} موظف",{n:N(list.length)})}</span></div>
+    <p class="note" style="margin:10px 0 0">${T("ملف Excel يضيف أو يحدّث بيانات عدة موظفين مرة واحدة (حسب الرقم الوظيفي أو الإيميل). ملف PDF يُرفق داخل ملف موظف محدد: افتح الموظف ثم «رفع ملف PDF».")}</p></div>`;
+  if (alerts.length) h+=`<div class="card"><div class="card-h"><h2>${T("وثائق قاربت على الانتهاء")}</h2><span class="pill bad">${N(alerts.length)}</span></div>${alerts.map(x=>`<button class="trow" data-emp="${esc(x.e.id)}"><span class="tt"><b>${esc(x.e.name||"")}</b><span class="note">${esc(x.e.branch||"")}</span></span><span class="row" style="justify-content:flex-end">${x.a.map(expPill).join("")}</span></button>`).join("")}</div>`;
+  h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${e.branch?" · "+esc(e.branch):""}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}</div>`;
+  return h+"</div>";
+}
+async function importEmployees(m,rows,file){
+  let n=0,up=0; const byNo={}, byEmail={};
+  Object.keys(S.employees).forEach(k=>{ const e=S.employees[k]; if(e.no) byNo[canonKey(e.no)]=k; if(e.email) byEmail[String(e.email).toLowerCase()]=k; });
+  for(const r of rows){ if(!r) continue; const o={};
+    EF.forEach(f=>{ const i=m["e_"+f.k]; if(i==null||i<0) return; let v=r[i]; if(v==null||String(v).trim()==="") return;
+      if(f.t==="date"){ const d=parseDate(v); v=d?`${d.y}-${pad(d.m)}-${pad(d.d)}`:String(v).trim(); } else v=normDigits(String(v)).trim().slice(0,120);
+      if(f.t==="email") v=v.toLowerCase(); o[f.k]=v; });
+    if(!o.name||TOTAL_ROW.test(o.name)) continue;
+    const k=(o.no&&byNo[canonKey(o.no)])||(o.email&&byEmail[o.email])||empKey(o), ex=S.employees[k];
+    if(ex) up++; const d=Object.assign({},ex||{},o,{updatedAt:todayKey});
+    if(!await save("employees",k,d)) throw shownErr(); n++;
+    if(o.no) byNo[canonKey(o.no)]=k; if(o.email) byEmail[o.email]=k; }
+  if(!n){ toast(T("لم أجد موظفين في الملف. راجع ربط الأعمدة.")); throw shownErr(); }
+  render(true); toast(T("تم حفظ {n} موظف ({u} تحديث).",{n,u:up}));
+}
+let PDFJS=null;
+function loadPdfJs(){ if(PDFJS) return PDFJS; PDFJS=new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  sc.onload=()=>{ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; res(window.pdfjsLib); }catch(e){ rej(e); } }; sc.onerror=()=>{ PDFJS=null; rej(new Error("lib")); }; document.head.appendChild(sc); }); return PDFJS; }
+async function pdfToImages(file){ const lib=await loadPdfJs(), doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise, out=[];
+  for(let i=1;i<=Math.min(doc.numPages,15);i++){ const pg=await doc.getPage(i), vp0=pg.getViewport({scale:1}), sc=Math.min(1100/vp0.width,2), vp=pg.getViewport({scale:sc}), c=document.createElement("canvas");
+    c.width=Math.round(vp.width); c.height=Math.round(vp.height); const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await pg.render({canvasContext:ctx,viewport:vp}).promise; let q=0.7, d=c.toDataURL("image/jpeg",q); while(d.length>700000&&q>0.3){ q-=0.15; d=c.toDataURL("image/jpeg",q); } out.push(d); }
+  return {pages:out,total:doc.numPages}; }
+async function uploadEmpPdf(file){
+  const e=S.employees[S.empOpen]; if(!e||!S.db) return; toast(T("جارٍ تجهيز الملف…"));
+  let r; try{ r=await pdfToImages(file); }catch(err){ toast(T("تعذّر قراءة ملف PDF.")); return; }
+  const fn=String(file.name||"file.pdf").slice(0,80), base=S.empOpen+"_"+Date.now().toString(36);
+  for(let i=0;i<r.pages.length;i++){ try{ await S.db.doc("empdocs/"+base+"_"+(i+1)).set({emp:S.empOpen,email:String(e.email||"").toLowerCase(),file:fn,page:i+1,img:r.pages[i],at:todayKey}); }catch(err){ toast(T("تعذّر حفظ الملف. قد تكون المساحة ممتلئة.")); break; } }
+  S.docsFor=null; render(true); toast(T(r.total>r.pages.length?"تم رفع أول {n} صفحة من الملف.":"تم رفع الملف ({n} صفحة).",{n:r.pages.length}));
+}
+document.addEventListener("input",e=>{ if(e.target.id==="empQ"){ S.empQ=e.target.value; const pos=e.target.selectionStart; render(true); const i=$("empQ"); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(x){} } } });
 function vMore(){
   const p=S.settings.perms||{};
   let h=`<h1>${T("المزيد")}</h1><p class="sub">${T(S.admin?"إعدادات المدير وصلاحيات الموظفين":"حسابك في وضع الموظف، للعرض فقط")}</p><div class="stack">`;
@@ -1345,10 +1465,11 @@ const ICON = {
   menu:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
   order:'<path d="M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8"/>',
   tasks:'<path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+  profile:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 17c.6-1.8 2-2.8 3.5-2.8s2.9 1 3.5 2.8M15 9h4M15 13h4"/>',
   team:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.2a3.2 3.2 0 0 1 0 5.6M17.5 14.3c2.1.8 3.5 2.9 3.5 5.7"/>',
   more:'<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'
 };
-const TABS=[["home","الرئيسية"],["tasks","المهام"],["sales","المبيعات"],["menu","القائمة"],["order","الطلب"],["team","الموظفين"],["waste","التوالف"],["reviews","التقييمات"],["more","المزيد"]];
+const TABS=[["home","الرئيسية"],["tasks","المهام"],["profile","بياناتي"],["sales","المبيعات"],["menu","القائمة"],["order","الطلب"],["team","الموظفين"],["waste","التوالف"],["reviews","التقييمات"],["more","المزيد"]];
 let dirty=false;
 function render(force){
   const ae=document.activeElement;
@@ -1361,7 +1482,7 @@ function render(force){
   $("nav").setAttribute("aria-label",T("الأقسام"));
   const vis=TABS.filter(([k])=>k==="home"||k==="more"||can(k));
   if (!vis.some(([k])=>k===S.tab)) S.tab="home";
-  $("tabs").innerHTML=vis.map(([k,t])=>`<button data-tab="${k}" class="${S.tab===k?"on":""}" ${S.tab===k?'aria-current="page"':""}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${T(t)}</button>`).join("");
+  $("tabs").innerHTML=vis.map(([k,t])=>`<button data-tab="${k}" class="${S.tab===k?"on":""}" ${S.tab===k?'aria-current="page"':""}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${T(k==="profile"&&isAdmin()?"ملفات الموظفين":t)}</button>`).join("");
   $("mLabel").textContent=mLabel(S.month);
   const rl=$("role"); rl.textContent=!S.ready?"…":T(S.admin?(S.preview?"معاينة موظف":"المدير"):"موظف"); rl.className="role"+(isAdmin()?"":" emp");
   $("banner").innerHTML = S.auth==="in"&&S.slow ? `<div class="banner">${T("تعذّر الوصول للبيانات حتى الآن. قد تكون المعروضة قديمة.")}</div>` : "";
@@ -1370,7 +1491,7 @@ function render(force){
   killCharts();
   const inApp=S.auth==="in"; $("role").style.display=inApp?"":"none"; document.querySelector(".month").style.display=inApp?"":"none"; $("nav").style.display=inApp?"":"none";
   if (S.auth!=="in"){ $("tabs").innerHTML=""; $("side").classList.add("none"); $("brBtn").classList.add("none"); $("main").innerHTML=vLogin(); return; }
-  $("main").innerHTML=({home:vHome,tasks:vTasks,sales:vSales,menu:vMenu,order:vOrder,team:vTeam,waste:vWaste,reviews:vReviews,more:vMore})[S.tab]();
+  $("main").innerHTML=({home:vHome,tasks:vTasks,profile:vProfile,sales:vSales,menu:vMenu,order:vOrder,team:vTeam,waste:vWaste,reviews:vReviews,more:vMore})[S.tab]();
   if (S.tab==="home" && can("sales")) { const st=salesStats(S.month,selBranch()); if (st.keys.length) chartCumulative("cHome",st); }
   if (S.tab==="sales") { const st=salesStats(S.month,curSalesBranch()); if (st.keys.length) chartDaily("cDaily",st); }
   if (S.tab==="waste") { const ws=wasteStats(S.month,curWasteBranch()); if (ws) chartWaste("cWaste",ws); }
@@ -1615,6 +1736,9 @@ async function onFile(kind,input){
   if (kind==="sales") openMapper({title:T("استيراد المبيعات"),file:f.name,rows:sh.rows,
     fields:[{key:"date",label:"التاريخ"},{key:"amount",label:"مبلغ المبيعات",req:true},{key:"branch",label:"الفرع"},{key:"orders",label:"عدد الطلبات",rowOpt:"كل صف في الملف طلب واحد"}],
     done:(m,rows)=>importSales(m,rows,f.name)});
+  else if (kind==="empxls"){ EF.forEach(x=>{ PAT["e_"+x.k]=x.re; }); openMapper({title:T("استيراد بيانات الموظفين"),file:f.name,rows:sh.rows,
+    fields:EF.map(x=>({key:"e_"+x.k,label:L(x.l),req:!!x.req})),
+    done:(m,rows)=>importEmployees(m,rows,f.name)}); }
   else if (kind==="price") openMapper({title:T("استيراد الأسعار"),file:f.name,rows:sh.rows,
     fields:[{key:"item",label:"المنتج",req:true},{key:"amount",label:"إجمالي مبيعات المنتج"},{key:"qty",label:"الكمية المباعة"},{key:"price",label:"سعر الحبة"}],
     done:(m,rows)=>importPrices(m,rows,f.name)});
@@ -1637,6 +1761,8 @@ $("fileMenu").addEventListener("change",e=>onFile("menu",e.target));
 $("fileOrder").addEventListener("change",e=>onFile("order",e.target));
 $("fileStock").addEventListener("change",e=>onFile("stock",e.target));
 $("filePrice").addEventListener("change",e=>onFile("price",e.target));
+$("fileEmpXls").addEventListener("change",e=>onFile("empxls",e.target));
+$("fileEmpPdf").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f&&isAdmin()) uploadEmpPdf(f); });
 
 /* ---------- export ---------- */
 async function downloadReport(){
@@ -1664,6 +1790,8 @@ document.addEventListener("click",async e=>{
   const lg=e.target.closest("[data-lang]"); if(lg){ setLang(lg.dataset.lang); return; }
   const mb=e.target.closest("[data-menuby]"); if(mb){ S.menuBy=mb.dataset.menuby; render(true); return; }
   const ts=e.target.closest("[data-tshift]"); if(ts){ S.teamShift=ts.dataset.tshift; S.teamEmp=""; S.taskOpen=null; S.taskDraft=null; render(true); return; }
+  const pz=e.target.closest("[data-pg]"); if(pz){ $("sheet").innerHTML=`<img alt="" style="width:100%;border-radius:10px" src="${esc(pz.src)}"><div class="row" style="margin-top:12px"><button class="btn" id="zmClose">${T("إغلاق")}</button></div>`; $("modal").classList.add("on"); $("zmClose").onclick=closeModal; return; }
+  const eo=e.target.closest("[data-emp]"); if(eo){ S.empOpen=eo.dataset.emp; S.docsFor=null; render(true); window.scrollTo(0,0); return; }
   const zm=e.target.closest("[data-zoom]"); if(zm&&S.taskDraft){ const src=(S.taskDraft.photos||{})[zm.dataset.zoom]; if(src){ $("sheet").innerHTML=`<img alt="" style="width:100%;border-radius:10px" src="${esc(src)}"><div class="row" style="margin-top:12px"><button class="btn" id="zmClose">${T("إغلاق")}</button></div>`; $("modal").classList.add("on"); $("zmClose").onclick=closeModal; } return; }
   const tkb=e.target.closest("[data-task]"); if(tkb){ const tb0=selBranch(); if(tb0&&can("tasks")) openTask(tb0,tkb.dataset.task); return; }
   const ynb=e.target.closest("[data-yn]"); if(ynb&&S.taskDraft){ const [yi,yv]=ynb.dataset.yn.split(":"); S.taskDraft.vals[yi]=yv; if(yv==="y") delete S.taskDraft.notes[yi]; render(true); return; }
@@ -1713,6 +1841,18 @@ document.addEventListener("click",async e=>{
   else if (act==="upOrder") $("fileOrder").click();
   else if (act==="upStockAll") $("fileStock").click();
   else if (act==="upPrice") $("filePrice").click();
+  else if (act==="upEmpXls") $("fileEmpXls").click();
+  else if (act==="upEmpPdf") $("fileEmpPdf").click();
+  else if (act==="newEmp"){ S.empEdit={branch:selBranch()||""}; render(true); window.scrollTo(0,0); }
+  else if (act==="editEmp"){ const ee=S.employees[S.empOpen]; if(ee){ S.empEdit=Object.assign({id:S.empOpen},clone(ee)); render(true); window.scrollTo(0,0); } }
+  else if (act==="cancelEmp"){ S.empEdit=null; render(true); }
+  else if (act==="backEmp"){ S.empOpen=null; S.docsFor=null; render(true); }
+  else if (act==="saveEmp2"){ const d={}; document.querySelectorAll("[data-ef]").forEach(i=>{ const v=i.value.trim(); if(v) d[i.dataset.ef]=i.dataset.ef==="email"?v.toLowerCase():v.slice(0,i.dataset.ef==="notes"?2000:120); });
+    if(!d.name){ toast(T("اكتب اسم الموظف.")); return; } const id=S.empEdit.id||empKey(d); d.updatedAt=todayKey;
+    if(await save("employees",id,d)){ const oldEmail=String((S.empEdit.email)||"").toLowerCase(); if(S.db&&S.empEdit.id&&oldEmail!==(d.email||"")){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.update({email:d.email||""}); }catch(e){} }
+      S.empEdit=null; S.empOpen=id; S.docsFor=null; render(true); toast(T("تم حفظ بيانات الموظف.")); } }
+  else if (act==="delEmp2"){ if(b.dataset.c){ const id=S.empOpen; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",id).get(); for(const x of sn.docs) await x.ref.delete(); }catch(e){} } S.empOpen=null; removeDoc("employees",id); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
+  else if (act==="delEmpDoc"){ if(b.dataset.c){ const fn=b.dataset.file; if(S.db){ try{ const sn=await S.db.collection("empdocs").where("emp","==",S.empOpen).get(); for(const x of sn.docs) if((x.data().file||"")===fn) await x.ref.delete(); }catch(e){} } S.docsFor=null; render(true); toast(T("تم حذف الملف.")); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="saveLimits"){ const s6=clone(S.settings); s6.taskLimits={};
     document.querySelectorAll("tr[data-lim]").forEach(tr=>{ const mn=toNum(tr.querySelector("[data-lmin]").value), mx=toNum(tr.querySelector("[data-lmax]").value); if(mn!=null&&mx!=null&&mx>=mn) s6.taskLimits[tr.dataset.lim]={min:mn,max:mx}; });
     if(await save("settings","main",s6)){ render(true); toast(T("تم حفظ المدى.")); } }
@@ -1789,7 +1929,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
   firebase.initializeApp(cfg);
   const auth=firebase.auth(), fs=firebase.firestore(); S.fbAuth=auth;
   let unsubs=[];
-  const DATA=["sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
+  const DATA=["employees","sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
   auth.onAuthStateChanged(async u=>{
     unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[]; DATA.forEach(c=>S[c]={}); S.salesRank={}; S.me=null; S.admin=false; S.db=null; UNDO.length=0;
     if (!u){ S.auth="out"; S.email=""; S.ready=true; render(true); return; }
@@ -1802,7 +1942,9 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     const sub=(ref,cb)=>unsubs.push(ref.onSnapshot(cb,()=>{}));
     sub(fs.doc("settings/main"),sn=>{ if(sn.exists){ const d=clone(sn.data()); d.perms=Object.assign({sales:true,menu:true,waste:true,reviews:true},d.perms); S.settings=d; } render(); });
     ["prices","menu"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
+    S.docsFor=null; S.empdocs=null; S.empOpen=null; S.empEdit=null;
     if (S.admin){
+      sub(fs.collection("employees"),q=>{ S.employees=map(q); render(); });
       ["sales","waste","reviews","wasteb","orders","stock","staff","members"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("comments").orderBy("date","desc").limit(300),q=>{ S.comments=map(q); render(); });
       sub(fs.collection("empsales").orderBy("date","desc").limit(1500),q=>{ S.empsales=map(q); render(); });
@@ -1812,6 +1954,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
           const old=Object.keys(o).filter(k=>o[k].date<cut&&o[k].ph&&Object.keys(o[k].ph).length).slice(0,40);
           (async()=>{ for(const k of old){ try{ await fs.doc("taskpics/"+k).delete(); const d=clone(o[k]); d.ph={}; d.pruned=true; await fs.doc("tasklog/"+k).set(d); }catch(e){ break; } } })(); } });
     } else {
+      sub(fs.collection("employees").where("email","==",email),q=>{ S.employees=map(q); render(); });
       const b=me.branch; if(!b) return;
       ["reviews","wasteb","comments","orders","stock","staff","empsales","tasklog"].forEach(c=>sub(fs.collection(c).where("branch","==",b),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("salesb").where("branch","==",b),q=>{ const o={}, rk={}; q.docs.forEach(d=>{ const x=d.data(); o[x.month]={branches:{[b]:x.total||0},bt:{[b]:x.target||0},bd:{[b]:x.days||{}},bo:{[b]:x.orders||0},bod:{[b]:x.od||{}},days:x.days||{},file:x.file||""}; rk[x.month]={r:x.rk||0,n:x.rn||0}; }); S.sales=o; S.salesRank=rk; render(); });

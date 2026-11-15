@@ -37,5 +37,8 @@ service cloud.firestore {
     match /empsales/{id} { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /tasklog/{id}  { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /taskpics/{id} { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
+    // ملفات الموظفين: كل موظف يقرأ ملفه فقط (حسب إيميله)، والمدير يدير الكل
+    match /employees/{id} { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
+    match /empdocs/{id}   { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
   }
 }
