@@ -432,6 +432,8 @@ const EN = {
 "الفرع في الملف: «{b}». اختر الفرع المطابق في التطبيق، ويتذكره التطبيق للملفات الجاية.":"Branch in the file: \"{b}\". Choose the matching branch in the app; it will be remembered for the next files.",
 "باقي {n} ملف بعد هذا.":"{n} more file(s) after this one.","صفحات الملف":"File pages","تخطي هذا الملف":"Skip this file",
 "ملفات PDF تُقرأ تلقائياً وتتعبأ منها بيانات الموظف (الاسم، الرقم، الجنسية، الهوية، الشهادة الصحية، الجوال، الإيميل، التواريخ...) مع صورته، ثم تراجعها وتحفظ. تقدر تختار عدة ملفات.":"PDF files are read automatically and the employee's data is filled in (name, number, nationality, ID, health certificate, mobile, email, dates...) with the photo; then you review and save. You can pick several files.",
+"الفروع":"Branches","اسم فرع جديد":"New branch name","إضافة فرع":"Add branch","تمت إضافة الفرع.":"Branch added.","هذا الفرع موجود.":"This branch already exists.","اكتب اسم الفرع.":"Enter the branch name.","تم حذف الفرع من القائمة.":"Branch removed from the list.",
+"حذف الفرع من القائمة ما يحذف بياناته.":"Removing a branch from the list does not delete its data.",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -625,13 +627,16 @@ function reviewSummary(){
   const avg=!rows.length?null:cnt>0?rows.reduce((a,x)=>a+x.r.rating*(+x.r.count||0),0)/cnt:rows.reduce((a,x)=>a+x.r.rating,0)/rows.length;
   return {g,rows,cnt,avg,last:rows.reduce((a,x)=>x.r.date>a?x.r.date:a,"")};
 }
+const DEF_BRANCHES=["B02 - Dammam Cornish","B09 - Saihat","B17 - Drive Thru - Tarot","B20 - Drive Thru - Mazruaya"];
+const branchList = () => Array.isArray(S.settings.branches) ? S.settings.branches : DEF_BRANCHES;
 function allBranches(){
-  const s=new Set();
+  const s=new Set(branchList()), hidden=new Set(S.settings.hiddenBranches||[]);
   Object.values(S.sales).forEach(d=>{ if(!d) return; Object.keys(d.branches||{}).forEach(n=>s.add(n)); Object.keys(d.bt||{}).forEach(n=>s.add(n)); });
   Object.values(S.wasteb).forEach(d=>d&&d.branch&&s.add(d.branch));
   Object.values(S.reviews).forEach(d=>d&&d.branch&&s.add(d.branch));
   Object.values(S.orders).forEach(d=>d&&d.branch&&s.add(d.branch));
   Object.values(S.staff).forEach(d=>d&&d.branch&&s.add(d.branch));
+  hidden.forEach(n=>{ if(!branchList().includes(n)) s.delete(n); });
   return [...s].sort();
 }
 function chips(){ return ""; }
@@ -1688,6 +1693,10 @@ function renderMenu(){
   const brOpts=cur=>`<option value="__admin" ${cur==="__admin"?"selected":""}>${T("مدير (كل الفروع)")}</option>${[...new Set([...brs,cur].filter(x=>x&&x!=="__admin"))].map(n=>`<option value="${esc(n)}" ${cur===n?"selected":""}>${esc(n)}</option>`).join("")}`;
   const shOpts=cur=>SHIFTS.map(([k,t])=>`<option value="${k}" ${cur===k?"selected":""}>${T(t)}</option>`).join("");
   let h=`<div class="menu-h"><h2>${T("الإعدادات")}</h2><button class="btn sm" data-act="closeMenu">${T("إغلاق")}</button></div>
+    <h2>${T("الفروع")} <span class="note num">${brs.length}</span></h2>
+    <div style="margin:6px 0 10px">${brs.map(n=>`<div class="urow" style="padding:6px 0"><span class="un">${esc(n)}</span><button class="btn sm" data-act="delBranch" data-b="${esc(n)}">${T("حذف")}</button></div>`).join("")}</div>
+    <div class="row" style="align-items:flex-end"><div class="field"><label for="newBr">${T("اسم فرع جديد")}</label><input id="newBr" placeholder="B05 - ..."></div><button class="btn" data-act="addBranch">${T("إضافة فرع")}</button></div>
+    <p class="note" style="margin:6px 0 18px">${T("حذف الفرع من القائمة ما يحذف بياناته.")}</p>
     <h2>${T("إضافة موظف")}</h2><p class="note" style="margin:4px 0 10px">${T("كل موظف يدخل بإيميله وكلمة مرور يختارها، ويرى فرعه والأقسام المحددة له فقط.")}</p>
     <div class="field"><label for="mName">${T("الاسم")}</label><input id="mName"></div>
     <div class="field" style="margin-top:8px"><label for="mEmail">${T("الإيميل")}</label><input id="mEmail" type="email" dir="ltr" inputmode="email"></div>
@@ -1974,6 +1983,12 @@ document.addEventListener("click",async e=>{
     const t=toNum($("inRevT").value); if(t>0) s2.reviewTarget=Math.round(t);
     if(await save("settings","main",s2)){ render(true); toast(T("تم حفظ الإعدادات.")); } }
   else if (act==="closeMenu") closeMenu();
+  else if (act==="addBranch"){ const n=$("newBr").value.trim().replace(/\s+/g," ").slice(0,60); if(!n){ toast(T("اكتب اسم الفرع.")); return; }
+    if(allBranches().some(x=>canonKey(x)===canonKey(n))){ toast(T("هذا الفرع موجود.")); return; }
+    const s9=clone(S.settings); s9.branches=branchList().concat([n]); s9.hiddenBranches=(s9.hiddenBranches||[]).filter(x=>x!==n);
+    if(await save("settings","main",s9)){ render(true); toast(T("تمت إضافة الفرع.")); } }
+  else if (act==="delBranch"){ if(b.dataset.c){ const n=b.dataset.b, s9=clone(S.settings); s9.branches=branchList().filter(x=>x!==n); s9.hiddenBranches=[...new Set((s9.hiddenBranches||[]).concat([n]))];
+      if(await save("settings","main",s9)){ render(true); toast(T("تم حذف الفرع من القائمة.")); } } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="copyInvite"){ const mm=S.members[b.dataset.id]; if(!mm) return; try{ await navigator.clipboard.writeText(inviteText(Object.assign({email:b.dataset.id},mm))); toast(T("تم نسخ رسالة الدعوة.")); }catch(e){ toast(T("تعذّر النسخ.")); } }
   else if (act==="addMember"){ const nm=$("mName").value.trim().slice(0,60), em=$("mEmail").value.trim().toLowerCase(), br=$("mBranch").value, sh=$("mShift").value==="n"?"n":"m";
     if(!nm||!/^[^@\s\/]+@[^@\s\/]+\.[^@\s\/]+$/.test(em)||!br){ toast(T("اكتب الاسم وإيميلاً صحيحاً واختر الفرع.")); return; }
