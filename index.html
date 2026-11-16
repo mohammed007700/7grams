@@ -110,6 +110,13 @@ td.od.z{color:var(--muted)}
 .dsel{display:flex;gap:6px;min-width:0}
 .dsel select{flex:1 1 0;min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 6px;background:var(--bg)}
 .dsel select[data-dp="m"]{flex:1.6 1 0}
+table.inv th.own{background:var(--brand-soft);color:var(--brand)}
+table.inv td:first-child,table.inv th:first-child{position:sticky;inset-inline-start:0;background:var(--bg);z-index:1}
+.seg.yn button.on.a{background:var(--muted)}
+.nabtn{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:2px 8px;font-size:12px;margin-inline-start:6px}
+.nabtn.on{background:var(--muted);color:#fff;border-color:var(--muted)}
+.tf.na input{opacity:.45}
+#backBtn.none{display:none}
 .cm{padding:10px 0;border-bottom:1px solid var(--line)}
 .cm:last-child{border-bottom:0}
 .cm .hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
@@ -241,6 +248,7 @@ nav.tabs button.on::before{content:"";position:absolute;top:-1px;width:28px;heig
   <div class="brand"><img id="logo" alt="7 GRAMS" src="data:image/png;base64,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"><b>7 GRAMS</b><span id="role" class="role emp">…</span></div>
   <div class="month"><button id="mPrev"></button><span id="mLabel"></span><button id="mNext"></button></div>
   <button class="lang none" id="brBtn"></button>
+  <button class="lang none" id="backBtn" aria-label="Back">→</button>
   <button class="lang none" id="undoBtn"></button>
   <button class="lang" id="langBtn"></button>
   <button class="lang none" id="dotBtn">⋮</button>
@@ -450,6 +458,17 @@ const EN = {
 "تم تحليل {n} منتج على {b} فرع لشهر {m}.":"Analysed {n} products across {b} branch(es) for {m}.",
 "الأعلى":"Top","الأقل":"Bottom",
 "مدير: يشوف كل الفروع":"Admin: sees all branches","موظف: يشوف فرعه فقط":"Staff: sees own branch only","تنبيه: هذا الحساب مدير ويشوف بيانات كل الفروع.":"Note: this account is an admin and sees every branch's data.","هذا الحساب بدون فرع، فما راح يشوف أي بيانات.":"This account has no branch, so it will not see any data.",
+"الجرد اليومي":"Daily inventory","الصباح يبدأ الجرد":"Morning starts the count","الليل يقفل الجرد":"Night closes the count","يومي":"Daily","أسبوعي":"Weekly",
+"افتتاحي":"Opening","مستلم":"Received","تحويل وارد +":"Transfer in +","إجمالي الوارد":"Total (IN)","تحويل صادر -":"Transfer out -","تالف":"Waste","إجمالي الصادر":"Total (OUT)","الجرد النهائي":"End inventory","الاستهلاك":"Consumption","المباع (POS)":"Sold (POS)","الفرق":"Variance","الوحدة":"Unit",
+"شفت الصباح بدأ الجرد":"Morning shift started the count","شفت الليل قفل الجرد":"Night shift closed the count","بواسطة {n} · {t}":"by {n} · {t}","تم بواسطة":"Done by","اكتب اسمك في خانة «تم بواسطة».":"Write your name in \"Done by\".",
+"شفت الصباح يعبّي: الافتتاحي والمستلم والتحويل الوارد. الافتتاحي ينحط تلقائياً من جرد إغلاق أمس.":"The morning shift fills: opening, received and transfers in. Opening is filled automatically from yesterday's closing count.",
+"شفت الليل يعبّي: التحويل الصادر والتالف والجرد النهائي والمباع، والتطبيق يحسب الاستهلاك والفرق.":"The night shift fills: transfers out, waste, end inventory and sold; the app works out consumption and variance.",
+"حفظ جرد الصباح":"Save morning count","قفل الجرد":"Close the count","تم حفظ جرد الصباح.":"Morning count saved.","تم قفل الجرد.":"Count closed.",
+"المهام الأسبوعية":"Weekly tasks","تظهر ضمن المهام اليومية في يوم واحد من الأسبوع، وكل مهمة لها شفت. الصورة إلزامية لكل مهمة.":"They appear inside the daily tasks on one day of the week, each assigned to a shift. A photo is required for every task.",
+"يوم المهام الأسبوعية":"Weekly tasks day","الشفتين":"Both shifts","إضافة مهمة":"Add task","حفظ المهام الأسبوعية":"Save weekly tasks","لحذف مهمة امسح اسمها ثم احفظ.":"To remove a task, clear its name and save.","تم الحفظ.":"Saved.",
+"مهام إضافية":"Extra tasks","أضف أي مهمة يومية أو أسبوعية، ببنود يجاوب عليها الموظف بنعم أو لا أو لا ينطبق.":"Add any daily or weekly task with items staff answer Yes, No or N/A.","بند":"items","صورة لكل بند":"Photo for each item","صورة واحدة":"One photo","بدون صور":"No photos",
+"اسم المهمة":"Task name","التكرار":"Frequency","اليوم (للأسبوعي)":"Day (weekly)","الصور":"Photos","البنود (كل بند في سطر)":"Items (one per line)","إضافة المهمة":"Add the task","اكتب اسم المهمة وبنداً واحداً على الأقل.":"Enter a task name and at least one item.","تمت إضافة المهمة.":"Task added.",
+"أصناف الجرد":"Inventory items","كل صنف في سطر: الاسم | الوحدة":"One item per line: name | unit","حفظ أصناف الجرد":"Save inventory items","لا ينطبق":"N/A","رجوع":"Back",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -521,7 +540,7 @@ function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("on"
 const S = {
   admin:false, preview:false, tab:"home", month: mkOf(now.getFullYear(), now.getMonth()+1),
   settings:{perms:{sales:true,menu:true,waste:true,reviews:true}, reviewsUrl:""},
-  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, employees:{}, menub:{}, empdocs:null, docsFor:null, empOpen:null, empEdit:null, empQ:"", me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
+  sales:{}, waste:{}, reviews:{}, menu:{}, menuBy:null, wasteb:{}, comments:{}, members:{}, employees:{}, menub:{}, invent:{}, invDraft:null, wkDraft:null, empdocs:null, docsFor:null, empOpen:null, empEdit:null, empQ:"", me:null, auth:"loading", email:"", orders:{}, stock:{}, prices:{}, staff:{}, empsales:{}, empLocal:{}, tasklog:{}, taskLocal:{}, taskOpen:null, taskDraft:null, taskBy:"", teamDate:todayKey, teamShift:"m", teamEmp:"", teamDraft:null, teamKey:"", stockEdit:{}, stockDirty:{}, code:"", branch:null, user:null, uid:null, db:null, dl:null, ready:false, slow:false
 };
 try { S.taskLocal = JSON.parse(localStorage.getItem("7g-tasks") || "{}") || {}; S.taskBy = localStorage.getItem("7g-by") || ""; } catch(e){ S.taskLocal={}; }
 try { S.empLocal = JSON.parse(localStorage.getItem("7g-emp") || "{}") || {}; } catch(e){ S.empLocal={}; }
@@ -1270,16 +1289,16 @@ const TASK_DEFS=[
   {id:"v60h",title:["V60 hot calibration","معايرة V60 حار"],code:"7G/OP/SOP/008",fields:v60Fields(true)},
   {id:"close",title:["Closing checklist","قائمة الإغلاق"],code:"7G/OP/SOP/002",type:"check",items:CLOSE_ITEMS,shift:"n"}
 ];
-function taskProgress(b,date,sh){ const docs=allTasks(), defs=TASK_DEFS.filter(d=>!d.shift||d.shift===sh); let f=0,t=0,done=0,iss=0;
-  defs.forEach(d=>{ const doc=docs[date+"_"+bid(b)+"_"+sh+"_"+d.id], st=taskStatus(d,doc); t+=1; f+=st.started&&st.total?Math.min(st.filled/st.total,1):0; /* every task weighs the same; a half-filled task counts as half */ if(st.done) done++; iss+=st.issues; });
+function taskProgress(b,date,sh){ const docs=allTasks(), defs=allTaskDefs(sh,date); let f=0,t=0,done=0,iss=0;
+  defs.forEach(d=>{ const doc=docs[date+"_"+bid(b)+"_"+sh+"_"+d.id], st=d.type==="inv"?invStatus(b,date,sh):taskStatus(d,doc); t+=1; f+=st.started&&st.total?Math.min(st.filled/st.total,1):0; /* every task weighs the same; a half-filled task counts as half */ if(st.done) done++; iss+=st.issues; });
   return {f,t,done,n:defs.length,iss}; }
 function dayProgress(b,date){ const m=taskProgress(b,date,"m"), e=taskProgress(b,date,"n"); return {m,e,f:m.f+e.f,t:m.t+e.t,done:m.done+e.done,n:m.n+e.n,iss:m.iss+e.iss}; }
-const shiftTasks = sh => TASK_DEFS.filter(d=>!d.shift||d.shift===sh);
+const shiftTasks = sh => allTaskDefs(sh,S.teamDate);
 const taskId = (b,def) => S.teamDate+"_"+bid(b)+"_"+S.teamShift+"_"+def.id;
 const allTasks = () => Object.assign({},S.taskLocal,S.tasklog);
 function limOf(def,f){ const o=(S.settings.taskLimits||{})[def.id+"."+f.k]; return {min:o&&o.min!=null?+o.min:f.min,max:o&&o.max!=null?+o.max:f.max}; }
 function fieldIssue(def,f,v){
-  if (v==null||v==="") return null;
+  if (v==null||v===""||v==="NA") return null;
   if (f.eq) return canonKey(v)===canonKey(f.eq) ? null : {msg:[`Must be ${f.eq}`,`يجب أن يكون ${f.eq}`],sol:f.sol};
   if (f.min==null&&f.max==null) return null;
   const n=toNum(v), lm=limOf(def,f); if(n==null) return {msg:["Enter a number","أدخل رقماً"],sol:null};
@@ -1288,7 +1307,7 @@ function fieldIssue(def,f,v){
   return null;
 }
 function photoUnits(def){
-  if (def.type==="check") return [{k:"all",label:["Photo of the branch","صورة عامة للفرع"]}];
+  if (def.type==="check"){ if(def.photoNone) return []; if(def.photoEach) return def.items.map((it,i)=>it&&it.h?null:{k:"i"+i,label:it,item:i}).filter(Boolean); return [{k:"all",label:["Photo of the branch","صورة عامة للفرع"]}]; }
   const out=[], seen=new Set();
   def.fields.forEach(f=>{ if(f.g){ const k="g_"+canonKey(f.g[0]); if(!seen.has(k)){ seen.add(k); out.push({k,label:f.g}); } } else if(!f.opt) out.push({k:f.k,label:f.label}); });
   return out;
@@ -1305,14 +1324,15 @@ document.addEventListener("change",async e=>{ const t=e.target; if(!t.dataset||t
 function taskStatus(def,doc){
   if (!doc) return {done:false,issues:0,filled:0,total:0,started:false};
   const v=doc.vals||{}; let issues=0, filled=0, total=0;
-  const ph=doc.photos||doc.ph||{}; photoUnits(def).forEach(u=>{ total++; if(ph[u.k]) filled++; });
-  if (def.type==="check") def.items.forEach((it,i)=>{ if(it.h) return; total++; if(v[i]==="y"||v[i]==="n"){ filled++; if(v[i]==="n") issues++; } });
+  const ph=doc.photos||doc.ph||{};
+  photoUnits(def).forEach(u=>{ if(u.item!=null&&v[u.item]==="na") return; if(def.type!=="check"){ const fs=def.fields.filter(f=>(f.g?unitOfGroup(f.g):f.k)===u.k&&!f.opt); if(fs.length&&fs.every(f=>v[f.k]==="NA")) return; } total++; if(ph[u.k]) filled++; });
+  if (def.type==="check") def.items.forEach((it,i)=>{ if(it.h) return; total++; if(v[i]==="y"||v[i]==="n"||v[i]==="na"){ filled++; if(v[i]==="n") issues++; } });
   else def.fields.forEach(f=>{ const has=v[f.k]!=null&&v[f.k]!==""; if(!f.opt) total++; if(has){ if(!f.opt) filled++; if(fieldIssue(def,f,v[f.k])) issues++; } });
   return {done:filled>=total,issues,filled,total,started:true};
 }
 const statusPill = st => !st.started ? `<span class="pill mute">${T("لم يُنجز")}</span>` : !st.done ? `<span class="pill warn">${T("ناقص")} ${N(st.filled+"/"+st.total)}</span>` : st.issues ? `<span class="pill bad">${T("{n} ملاحظة",{n:N(st.issues)})}</span>` : `<span class="pill good">${T("مكتمل")}</span>`;
 const issueHtml = x => x ? `<b>${esc(L(x.msg))}</b>${x.sol?`<span>${T("الحل")}: ${esc(L(x.sol))}</span>`:""}` : "";
-function openTask(b,id){ const def=TASK_DEFS.find(d=>d.id===id); if(!def) return; const ex=allTasks()[taskId(b,def)];
+function openTask(b,id){ if(id==="inv") return openInv(b); const def=defById(id); if(!def) return; const ex=allTasks()[taskId(b,def)];
   S.taskOpen=id; const tid=taskId(b,def), loc=S.taskLocal[tid];
   S.taskDraft={vals:ex?clone(ex.vals):{},notes:ex?clone(ex.notes):{},by:ex&&ex.by?ex.by:(S.taskBy||""),photos:loc&&loc.photos?clone(loc.photos):{}}; render(true); window.scrollTo(0,0);
   if (S.db && S.tasklog[tid] && Object.keys(S.tasklog[tid].ph||{}).length){ const dr=S.taskDraft;
@@ -1328,24 +1348,25 @@ function vTasks(){
     const pb=x=>{ const v=x.t?x.f/x.t:0; return `<div class="pb ${v>=1?"good":v>=0.5?"warn":"bad"}"><i style="width:${v*100}%"></i>${N((v*100).toFixed(0)+"%")}</div>`; };
     h+= brs.length ? `<div class="card"><div class="card-h"><h2>${T("نسبة إنجاز المهام")}</h2><span class="note num">${esc(S.teamDate)}</span></div><div class="tw"><table><thead><tr><th>${T("الترتيب")}</th><th>${T("الفرع")}</th><th class="n">${T("إنجاز اليوم")}</th><th class="n">${T("إنجاز الصباحي")}</th><th class="n">${T("إنجاز الليلي")}</th><th class="n">${T("المهام المكتملة")}</th><th class="n">${T("الملاحظات")}</th><th></th></tr></thead><tbody>${P.map((x,i)=>`<tr><td><span class="rkb${i<3&&x.d.f?" t":""}">${i+1}</span></td><td>${esc(x.n)}</td><td class="n">${pb(x.d)}</td><td class="n">${pb(x.m)}</td><td class="n">${pb(x.e)}</td><td class="n num">${x.d.done}/${x.d.n}</td><td class="n">${x.d.iss?`<span class="pill bad">${N(x.d.iss)}</span>`:N(0)}</td><td class="n"><button class="btn sm" data-br="${esc(x.n)}">${T("عرض")}</button></td></tr>`).join("")}</tbody></table></div></div>`
       : `<div class="card soft empty"><b>${T("لا توجد أقسام متاحة لك حالياً")}</b></div>`;
-    return h+(a?limitsCard():"")+"</div>";
+    return h+(a?taskAdminCard()+limitsCard():"")+"</div>";
   }
   { const dp=dayProgress(b,S.teamDate), pc=x=>x.t?pct(x.f/x.t,0):"—";
     h+=`<div class="grid g3">${kpi(T("إنجاز اليوم"),pc(dp),T("{a} من {b} مهمة",{a:N(dp.done),b:N(dp.n)}))}${kpi(T("إنجاز الصباحي"),pc(dp.m),T("{a} من {b} مهمة",{a:N(dp.m.done),b:N(dp.m.n)}))}${kpi(T("إنجاز الليلي"),pc(dp.e),T("{a} من {b} مهمة",{a:N(dp.e.done),b:N(dp.e.n)}))}</div>`; }
   const def=S.taskOpen&&defs.find(d=>d.id===S.taskOpen);
   if (!def) { S.taskOpen=null;
-    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=taskStatus(d,docs[taskId(b,d)]); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${statusPill(st)}</button>`; }).join("")}</div>`;
-    return h+(a?limitsCard():"")+"</div>";
+    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=d.type==="inv"?invStatus(b,S.teamDate,S.teamShift):taskStatus(d,docs[taskId(b,d)]); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${statusPill(st)}</button>`; }).join("")}</div>`;
+    return h+(a?taskAdminCard()+limitsCard():"")+"</div>";
   }
+  if (def.type==="inv") return h+vInv(b)+"</div>";
   const dr=S.taskDraft||(S.taskDraft={vals:{},notes:{},by:"",photos:{}}), id=taskId(b,def), saved=docs[id];
   h+=`<div class="card"><div class="card-h"><h2>${esc(L(def.title))}</h2><button class="btn sm" data-act="backTasks">${T("رجوع للمهام")}</button></div>
     <div class="field" style="max-width:320px"><label for="tkBy">${T("تم الفحص بواسطة")}</label><input id="tkBy" value="${esc(dr.by||"")}"></div>`;
-  if (def.type==="check") h+=`<div class="pcap" style="margin-top:12px">${photoCtl(photoUnits(def)[0])}</div>`;
+  if (def.type==="check"&&!def.photoEach&&!def.photoNone) h+=`<div class="pcap" style="margin-top:12px">${photoCtl(photoUnits(def)[0])}</div>`;
   if (def.type==="check") h+=`<div style="margin-top:8px">${def.items.map((it,i)=>{ if(it.h) return `<div class="tgh">${esc(L(it.h))}</div>`; const v=dr.vals[i];
-      return `<div class="citem${v==="n"?" bad":""}"><div class="ct">${esc(L(it))}</div><div class="seg yn"><button data-yn="${i}:y" class="${v==="y"?"on y":""}">${T("نعم")}</button><button data-yn="${i}:n" class="${v==="n"?"on n":""}">${T("لا")}</button></div>${v==="n"?`<div class="tmsg">${issueHtml({msg:["Not done","لم يُنجز"],sol:SOL.check})}</div><input class="cnote" id="cn-${i}" data-cn="${i}" placeholder="${T("اكتب السبب")}" value="${esc(dr.notes[i]||"")}">`:""}</div>`; }).join("")}</div>`;
+      return `<div class="citem${v==="n"?" bad":""}"><div class="ct">${esc(L(it))}</div><div class="seg yn"><button data-yn="${i}:y" class="${v==="y"?"on y":""}">${T("نعم")}</button><button data-yn="${i}:n" class="${v==="n"?"on n":""}">${T("لا")}</button><button data-yn="${i}:na" class="${v==="na"?"on a":""}">${T("لا ينطبق")}</button></div>${def.photoEach&&v!=="na"?`<div class="pcap" style="grid-column:1/-1">${photoCtl({k:"i"+i,label:it})}</div>`:""}${v==="n"?`<div class="tmsg">${issueHtml({msg:["Not done","لم يُنجز"],sol:SOL.check})}</div><input class="cnote" id="cn-${i}" data-cn="${i}" placeholder="${T("اكتب السبب")}" value="${esc(dr.notes[i]||"")}">`:""}</div>`; }).join("")}</div>`;
   else { let g=null; h+=`<div class="tfg">`; def.fields.forEach(f=>{ const gl=f.g?L(f.g):null; if(gl!==g){ g=gl; if(gl) h+=`<div class="tgh">${esc(gl)}</div><div class="pcap gr">${photoCtl({k:unitOfGroup(f.g),label:f.g})}</div>`; }
       const v=dr.vals[f.k], is=fieldIssue(def,f,v), lm=f.eq?null:limOf(def,f), hint=f.eq?f.eq:f.hint?f.hint:(f.min!=null?lm.min+" - "+lm.max+(f.u?" "+f.u:""):"");
-      h+=`<div class="tf${is?" bad":""}" id="tf-${f.k}"><label for="tk-${f.k}">${esc(L(f.label))}${hint?` <span class="note">(\u2066${esc(hint)}\u2069)</span>`:""}</label><input id="tk-${f.k}" data-tk="${f.k}" ${f.eq?"":'inputmode="decimal"'} value="${v==null?"":esc(v)}"><div class="tmsg" id="tm-${f.k}">${issueHtml(is)}</div>${!f.g&&!f.opt?`<div class="pcap">${photoCtl({k:f.k,label:f.label})}</div>`:""}</div>`; });
+      h+=`<div class="tf${is?" bad":""}${v==="NA"?" na":""}" id="tf-${f.k}"><label for="tk-${f.k}">${esc(L(f.label))}<button type="button" class="nabtn${v==="NA"?" on":""}" data-na="${f.k}">${T("لا ينطبق")}</button>${hint?` <span class="note">(\u2066${esc(hint)}\u2069)</span>`:""}</label><input id="tk-${f.k}" data-tk="${f.k}" ${f.eq?"":'inputmode="decimal"'} value="${v==null||v==="NA"?"":esc(v)}" ${v==="NA"?"disabled":""}><div class="tmsg" id="tm-${f.k}">${issueHtml(is)}</div>${!f.g&&!f.opt?`<div class="pcap">${photoCtl({k:f.k,label:f.label})}</div>`:""}</div>`; });
     h+=`</div>`; }
   h+=`<div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveTask">${T("حفظ المهمة")}</button><button class="btn" data-act="copyTask">${T("نسخ النتيجة")}</button>${a&&saved?`<button class="btn" data-act="delTask">${T("حذف")}</button>`:""}${saved?`<span class="note">${S.tasklog[id]?"":T("على هذا الجهاز")}</span>`:""}</div></div>`;
   return h+"</div>";
@@ -1360,7 +1381,7 @@ document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||!S.taskD
   if (t.id==="tkBy"){ S.taskDraft.by=t.value; return; }
   if (t.dataset.cn!=null){ S.taskDraft.notes[t.dataset.cn]=t.value; return; }
   if (t.dataset.tk==null) return;
-  const def=TASK_DEFS.find(d=>d.id===S.taskOpen), f=def&&def.fields&&def.fields.find(x=>x.k===t.dataset.tk); if(!f) return;
+  const def=defById(S.taskOpen), f=def&&def.fields&&def.fields.find(x=>x.k===t.dataset.tk); if(!f) return;
   const v=t.value.trim(); if(v==="") delete S.taskDraft.vals[f.k]; else S.taskDraft.vals[f.k]=v;
   const is=fieldIssue(def,f,v), box=$("tf-"+f.k), m=$("tm-"+f.k); if(box) box.classList.toggle("bad",!!is); if(m) m.innerHTML=issueHtml(is); });
 function taskText(b,def){ const dr=S.taskDraft, st=taskStatus(def,dr), lines=[L(def.title)+" - "+b+" - "+S.teamDate+" - "+shiftName(S.teamShift), T("تم الفحص بواسطة")+": "+(dr.by||"-")];
@@ -1368,11 +1389,11 @@ function taskText(b,def){ const dr=S.taskDraft, st=taskStatus(def,dr), lines=[L(
   else def.fields.forEach(f=>{ const v=dr.vals[f.k]; if(v==null||v==="") return; const is=fieldIssue(def,f,v); lines.push((f.g?L(f.g)+" ":"")+L(f.label)+": "+v+(f.u?" "+f.u:"")+(is?" ✗ "+L(is.msg):"")); });
   lines.push(T("الملاحظات")+": "+st.issues); return lines.join("\n"); }
 async function taskAction(act){
-  if (act==="backTasks"){ S.taskOpen=null; S.taskDraft=null; render(true); return; }
-  const b=selBranch(), def=TASK_DEFS.find(d=>d.id===S.taskOpen); if(!b||!can("tasks")) return;
+  if (act==="backTasks"){ S.taskOpen=null; S.taskDraft=null; S.invDraft=null; render(true); return; }
+  const b=selBranch(), def=defById(S.taskOpen); if(!b||!can("tasks")) return;
   if (act==="dlTasks"){ if(!S.dl||typeof XLSX==="undefined"||!isAdmin()) return; const docs=Object.values(allTasks()).filter(d=>d&&String(d.date).slice(0,7)===S.month&&(!b||d.branch===b)).sort((x,y)=>x.date<y.date?-1:1);
     if(!docs.length){ toast(T("لا توجد بيانات للتنزيل.")); return; }
-    const rows=docs.map(d=>{ const df=TASK_DEFS.find(x=>x.id===d.task), st=df?taskStatus(df,d):{issues:0,done:false}; return [d.date,d.branch,shiftName(d.shift),df?L(df.title):d.task,d.by||"",st.done?T("مكتمل"):T("ناقص"),st.issues,Object.keys(d.vals||{}).map(k=>k+"="+d.vals[k]).join("; ")]; });
+    const rows=docs.map(d=>{ const df=defById(d.task,d.shift,d.date), st=df?taskStatus(df,d):{issues:0,done:false}; return [d.date,d.branch,shiftName(d.shift),df?L(df.title):d.task,d.by||"",st.done?T("مكتمل"):T("ناقص"),st.issues,Object.keys(d.vals||{}).map(k=>k+"="+d.vals[k]).join("; ")]; });
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([[T("التاريخ"),T("الفرع"),T("الشفت"),T("المهمة"),T("تم الفحص بواسطة"),T("الحالة"),T("الملاحظات"),T("القراءة")],...rows]),T("المهام"));
     if (rtl()) wb.Workbook={Views:[{RTL:true}]};
     try{ await S.dl.save({filename:"7grams-tasks-"+S.month+".xlsx",data:XLSX.write(wb,{type:"array",bookType:"xlsx"})}); }catch(e){ if(!e||e.code!=="declined") toast(T("تعذّر تنزيل الملف في هذا العرض.")); } return; }
@@ -1649,6 +1670,114 @@ async function nextOcr(){
 }
 function queueOcr(files,id){ if(!files.length||!S.db) return; S.ocrQueue=(S.ocrQueue||[]).concat(files.map(file=>({file,id}))); if(!S.ocrPending&&!S.ocrBusy){ S.ocrBusy=true; nextOcr().finally(()=>{ S.ocrBusy=false; }); } }
 
+
+/* ---------- dynamic task list: weekly, custom, daily inventory ---------- */
+const WEEK_DEF=[{n:"تنظيف الفرن",s:"n"},{n:"تنظيف مكينة الآيسكريم",s:"n"},{n:"تنظيف مكينة الثلج",s:"n"},{n:"تنظيف",s:"m"},{n:"تنظيف فلاتر المكيف",s:"m"},{n:"تنظيف الثلاجات من الداخل",s:"m"},{n:"تنظيف خزان القهوة من الداخل",s:"n"},{n:"تنظيف صواني الكوكيز",s:"m"},{n:"تنظيف فلاتر الستارة الهوائية",s:"m"},{n:"تنظيف خلف البار والمكاين والمستودع",s:"n"}];
+const INV_DEF=[["Classic Cookies","Pc"],["Double Chocolate Cookies","Pc"],["Mini Dates Cookies","Pc"],["Mini Classic Cookies","Pc"],["Carrot cake","Pc"],["Chocolate Cake","Pc"],["Madrid Cake","Pc"],["Tiramisu Cake","Pc"],["Mini Mixed Cheese Croissant","Pc"],["Mini Zaatar Croissant","Pc"],["Mini Chocolate Croissant","Pc"],["Mini Plain Croissant","Pc"],["Slice lemon cake","Pc"],["Slice Marble cake","Pc"],["Slice Choco cake","Pc"],["Chocolate Souffle","Pc"],["Brownie Cookies","Pc"],["Chocolate Bar - Kinder","Pc"],["Chocolate Bar - Pistachio","Pc"],["Chocolate Bar - Rocher","Pc"],["Brownie Bites","Pc"],["Almond Truffle Bar","Pc"],["Water 300 ML","Pc"],["Ethiopia Hambela Bag","Kg"],["Colombia 1kg Bag","Kg"],["Ethiopia Dark Roast 1kg Bag","Kg"],["Ethiopia Guji 1Kg","Kg"],["Mini Cookies Dates 20pcs (Tin)","Pc"],["Mini Cookies Classic 20pcs (Tin)","Pc"],["Ethiopia Guji can","Pc"],["Brazil Tres Pontas can","Pc"],["Colombia can","Pc"],["7oz Plastic Cup","Pc"],["7oz Paper Cup","Pc"],["9oz Paper Cup","Pc"],["12oz Paper Cup","Pc"],["12oz Plastic Cup","Pc"],["16oz Plastic Cup","Pc"],["7GM Red Mug","Pc"]].map(([n,u])=>({n,u}));
+const DAYS=[["Sunday","الأحد"],["Monday","الاثنين"],["Tuesday","الثلاثاء"],["Wednesday","الأربعاء"],["Thursday","الخميس"],["Friday","الجمعة"],["Saturday","السبت"]];
+const weeklyList = () => Array.isArray(S.settings.weeklyTasks)&&S.settings.weeklyTasks.length ? S.settings.weeklyTasks : WEEK_DEF;
+const weeklyDay = () => S.settings.weeklyDay!=null&&S.settings.weeklyDay!=="" ? +S.settings.weeklyDay : 5;
+const invItems = () => Array.isArray(S.settings.invItems)&&S.settings.invItems.length ? S.settings.invItems : INV_DEF;
+const customTasks = () => Array.isArray(S.settings.customTasks) ? S.settings.customTasks : [];
+const weekdayOf = d => { const p=String(d).split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).getDay(); };
+function allTaskDefs(sh,date){
+  const out=TASK_DEFS.filter(d=>!d.shift||d.shift===sh);
+  out.push({id:"inv",type:"inv",title:["Daily inventory","الجرد اليومي"],code:sh==="m"?T("الصباح يبدأ الجرد"):T("الليل يقفل الجرد")});
+  const wd=weekdayOf(date);
+  if (wd===weeklyDay()){ const items=weeklyList().filter(x=>(x.s||"m")===sh||x.s==="b").map(x=>x.n); if(items.length) out.push({id:"weekly",type:"check",items,photoEach:true,title:["Weekly tasks","المهام الأسبوعية"],code:L(DAYS[wd])}); }
+  customTasks().forEach(c=>{ if(!(c.s==="b"||c.s===sh)) return; if(c.f==="w"&&+c.d!==wd) return; if(!(c.items||[]).length) return;
+    out.push({id:"c_"+c.id,type:"check",items:c.items,photoEach:c.p==="each",photoNone:c.p==="none",title:c.t,code:c.f==="w"?L(DAYS[+c.d]):T("يومي")}); });
+  return out;
+}
+const defById = (id,sh,date) => allTaskDefs(sh||S.teamShift,date||S.teamDate).find(d=>d.id===id);
+/* inventory */
+const invId = (date,b) => date+"_"+bid(b);
+const invNum = v => { if(v==null||v==="") return null; const n=toNum(v); return n==null?null:n; };
+function prevInv(b,date){ const ds=Object.values(S.invent||{}).filter(d=>d&&d.branch===b&&d.date<date&&d.n).sort((x,y)=>x.date<y.date?1:-1); return ds[0]||null; }
+function invCalc(doc,item,draft,sh){
+  const m=((doc&&doc.m&&doc.m.rows)||{})[item.n]||{}, n=((doc&&doc.n&&doc.n.rows)||{})[item.n]||{}, dr=(draft||{})[item.n]||{};
+  const pick=(src,k,own)=>own&&dr[k]!==undefined?dr[k]:src[k];
+  const o=invNum(pick(m,"o",sh==="m")), r=invNum(pick(m,"r",sh==="m")), ti=invNum(pick(m,"ti",sh==="m")), to=invNum(pick(n,"to",sh==="n")), w=invNum(pick(n,"w",sh==="n")), e=invNum(pick(n,"e",sh==="n")), s=invNum(pick(n,"s",sh==="n"));
+  const tin=(o||0)+(r||0)+(ti||0), tout=(to||0)+(w||0), cons=e==null?null:tin-tout-e, vr=cons==null||s==null?null:cons-s;
+  const pr=(priceList().find(x=>canonKey(x.n)===canonKey(item.n))||{}).p;
+  return {o,r,ti,to,w,e,s,tin,tout,cons,vr,sr:vr!=null&&pr?vr*pr:null};
+}
+function invStatus(b,date,sh){ const doc=(S.invent||{})[invId(date,b)]; if(!doc||!doc[sh]) return {done:false,issues:0,filled:0,total:1,started:false};
+  const it=invItems(), k=sh==="m"?"o":"e", rows=doc[sh].rows||{}, filled=it.filter(x=>rows[x.n]&&rows[x.n][k]!==""&&rows[x.n][k]!=null).length;
+  let issues=0; if(sh==="n") it.forEach(x=>{ const c=invCalc(doc,x,null,""); if(c.vr!=null&&Math.abs(c.vr)>0.001) issues++; });
+  return {done:filled>=it.length,issues,filled,total:it.length,started:true}; }
+function openInv(b){ const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, rows=clone(((doc&&doc[sh])||{}).rows||{});
+  if (sh==="m"&&!(doc&&doc.m)){ const pv=prevInv(b,S.teamDate); if(pv) invItems().forEach(x=>{ const c=invCalc(pv,x,null,""); if(c.e!=null) rows[x.n]=Object.assign({o:String(c.e)},rows[x.n]); }); }
+  S.taskOpen="inv"; S.invDraft=rows; S.taskDraft={by:((doc&&doc[sh])||{}).by||S.taskBy||"",vals:{},notes:{},photos:{}}; render(true); window.scrollTo(0,0); }
+function vInv(b){
+  const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, dr=S.invDraft||{}, a=isAdmin();
+  const cols=[["o","افتتاحي","m"],["r","مستلم","m"],["ti","تحويل وارد +","m"],["tin","إجمالي الوارد",""],["to","تحويل صادر -","n"],["w","تالف","n"],["tout","إجمالي الصادر",""],["e","الجرد النهائي","n"],["cons","الاستهلاك",""],["s","المباع (POS)","n"],["vr","الفرق",""],["sr","ر.س",""]];
+  const sec=(k,t)=>{ const x=doc&&doc[k]; return `<div class="row" style="gap:6px"><span class="pill ${x?"good":"mute"}">${T(t)}</span><span class="note">${x?T("بواسطة {n} · {t}",{n:esc(x.by||""),t:N(esc(x.time||""))}):T("لم يُنجز")}</span></div>`; };
+  let h=`<div class="card"><div class="card-h"><h2>${T("الجرد اليومي")} · <span class="num">${esc(S.teamDate)}</span></h2><button class="btn sm" data-act="backTasks">${T("رجوع للمهام")}</button></div>
+    <div class="stack" style="gap:6px;margin-bottom:10px">${sec("m","شفت الصباح بدأ الجرد")}${sec("n","شفت الليل قفل الجرد")}</div>
+    <p class="note" style="margin:0 0 10px">${T(sh==="m"?"شفت الصباح يعبّي: الافتتاحي والمستلم والتحويل الوارد. الافتتاحي ينحط تلقائياً من جرد إغلاق أمس.":"شفت الليل يعبّي: التحويل الصادر والتالف والجرد النهائي والمباع، والتطبيق يحسب الاستهلاك والفرق.")}</p>
+    <div class="field" style="max-width:320px;margin-bottom:10px"><label for="tkBy">${T("تم بواسطة")}</label><input id="tkBy" value="${esc(S.taskDraft&&S.taskDraft.by||"")}"></div>
+    <div class="tw" style="max-height:70vh;overflow:auto"><table class="ot inv"><thead><tr><th>${T("الصنف")}</th><th>${T("الوحدة")}</th>${cols.map(c=>`<th class="n${c[2]===sh?" own":""}">${T(c[1])}</th>`).join("")}</tr></thead><tbody>${invItems().map((it,i)=>{ const c=invCalc(doc,it,dr,sh);
+      return `<tr><td style="white-space:normal;min-width:120px">${esc(it.n)}</td><td class="note">${esc(it.u||"")}</td>${cols.map(([k,t,own])=>{ if(own===sh) return `<td class="n"><input class="sti" style="width:62px" id="iv-${i}-${k}" data-iv="${i}" data-ik="${k}" inputmode="decimal" value="${esc(((dr[it.n]||{})[k])??"")}"></td>`;
+        const v=c[k]; const cls=k==="vr"&&v?(v>0?' style="color:var(--bad);font-weight:600"':' style="color:var(--warn);font-weight:600"'):k==="tin"||k==="tout"||k==="cons"?' style="font-weight:600"':"";
+        return `<td class="n num" id="iv-${i}-${k}c"${cls}>${v==null?"—":k==="sr"?nf0.format(v):nf2.format(v)}</td>`; }).join("")}</tr>`; }).join("")}</tbody></table></div>
+    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveInv">${T(sh==="m"?"حفظ جرد الصباح":"قفل الجرد")}</button><button class="btn" data-act="copyInv">${T("نسخ النتيجة")}</button>${a&&doc?`<button class="btn" data-act="delInv">${T("حذف")}</button>`:""}</div></div>`;
+  return h;
+}
+document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||t.dataset.iv==null||!S.invDraft) return; const b=selBranch(); if(!b) return;
+  const it=invItems()[+t.dataset.iv]; if(!it) return; const row=S.invDraft[it.n]||(S.invDraft[it.n]={}); row[t.dataset.ik]=t.value.trim();
+  const doc=(S.invent||{})[invId(S.teamDate,b)], c=invCalc(doc,it,S.invDraft,S.teamShift);
+  ["tin","tout","cons","vr","sr"].forEach(k=>{ const el=$("iv-"+t.dataset.iv+"-"+k+"c"); if(el) el.textContent=c[k]==null?"—":k==="sr"?nf0.format(c[k]):nf2.format(c[k]); }); });
+async function invAction(act){
+  const b=selBranch(); if(!b||!can("tasks")) return; const id=invId(S.teamDate,b), sh=S.teamShift, cur=(S.invent||{})[id];
+  if (act==="copyInv"){ const doc=cur, lines=[T("الجرد اليومي")+" - "+b+" - "+S.teamDate]; invItems().forEach(it=>{ const c=invCalc(doc,it,S.invDraft,sh); lines.push(it.n+": "+[c.o,c.r,c.ti,c.to,c.w,c.e,c.cons,c.s,c.vr].map(v=>v==null?"-":nf2.format(v)).join(" | ")); });
+    try{ await navigator.clipboard.writeText(lines.join("\n")); toast(T("تم نسخ النتيجة.")); }catch(e){ toast(T("تعذّر النسخ.")); } return; }
+  if (act==="saveInv"){ const by=String(S.taskDraft&&S.taskDraft.by||"").trim(); if(!by){ toast(T("اكتب اسمك في خانة «تم بواسطة».")); return; }
+    S.taskBy=by; try{ localStorage.setItem("7g-by",by); }catch(e){}
+    const rows={}, keys=sh==="m"?["o","r","ti"]:["to","w","e","s"]; invItems().forEach(it=>{ const r=S.invDraft[it.n]||{}, o={}; keys.forEach(k=>{ if(r[k]!=null&&r[k]!=="") o[k]=String(r[k]).slice(0,20); }); if(Object.keys(o).length) rows[it.n]=o; });
+    const d=new Date(), doc=Object.assign({date:S.teamDate,branch:b},clone(cur||{})); doc.date=S.teamDate; doc.branch=b; doc[sh]={by:by.slice(0,60),time:pad(d.getHours())+":"+pad(d.getMinutes()),rows};
+    if (await save("invent",id,doc)){ S.taskOpen=null; S.invDraft=null; render(true); toast(T(sh==="m"?"تم حفظ جرد الصباح.":"تم قفل الجرد.")); } return; }
+}
+/* admin: weekly tasks, extra tasks, inventory items */
+function taskAdminCard(){
+  const wl=S.wkDraft||weeklyList().map(x=>({n:x.n,s:x.s||"m"})), shOpt=(v)=>[["m","صباحي"],["n","ليلي"],["b","الشفتين"]].map(([k,t])=>`<option value="${k}" ${v===k?"selected":""}>${T(t)}</option>`).join("");
+  let h=`<div class="card soft"><div class="card-h"><h2>${T("المهام الأسبوعية")}</h2></div><p class="note" style="margin:0 0 10px">${T("تظهر ضمن المهام اليومية في يوم واحد من الأسبوع، وكل مهمة لها شفت. الصورة إلزامية لكل مهمة.")}</p>
+    <div class="field" style="max-width:220px"><label for="wkDay">${T("يوم المهام الأسبوعية")}</label><select id="wkDay">${DAYS.map((d,i)=>`<option value="${i}" ${weeklyDay()===i?"selected":""}>${esc(L(d))}</option>`).join("")}</select></div>
+    <div class="tw" style="margin-top:10px"><table class="ot"><tbody>${wl.map((x,i)=>`<tr data-wk="${i}"><td><input class="sti" style="width:230px;text-align:start" data-wkn value="${esc(x.n)}" aria-label="${T("المهمة")}"></td><td><select class="sti" style="width:110px" data-wks aria-label="${T("الشفت")}">${shOpt(x.s)}</select></td></tr>`).join("")}</tbody></table></div>
+    <div class="row" style="margin-top:10px"><button class="btn" data-act="addWk">${T("إضافة مهمة")}</button><button class="btn pri" data-act="saveWk">${T("حفظ المهام الأسبوعية")}</button></div><p class="note" style="margin:6px 0 0">${T("لحذف مهمة امسح اسمها ثم احفظ.")}</p></div>`;
+  const ct=customTasks();
+  h+=`<div class="card soft"><div class="card-h"><h2>${T("مهام إضافية")}</h2></div><p class="note" style="margin:0 0 10px">${T("أضف أي مهمة يومية أو أسبوعية، ببنود يجاوب عليها الموظف بنعم أو لا أو لا ينطبق.")}</p>
+    ${ct.length?ct.map(c=>`<div class="urow"><span class="un"><b>${esc(c.t)}</b><br><span class="note">${T(c.s==="m"?"صباحي":c.s==="n"?"ليلي":"الشفتين")} · ${c.f==="w"?esc(L(DAYS[+c.d])):T("يومي")} · ${N((c.items||[]).length)} ${T("بند")} · ${T(c.p==="each"?"صورة لكل بند":c.p==="one"?"صورة واحدة":"بدون صور")}</span></span><button class="btn sm" data-act="delCt" data-id="${esc(c.id)}">${T("حذف")}</button></div>`).join(""):""}
+    <div class="grid g2" style="margin-top:10px"><div class="field"><label for="ctT">${T("اسم المهمة")}</label><input id="ctT"></div><div class="field"><label for="ctS">${T("الشفت")}</label><select id="ctS">${shOpt("b")}</select></div>
+    <div class="field"><label for="ctF">${T("التكرار")}</label><select id="ctF"><option value="d">${T("يومي")}</option><option value="w">${T("أسبوعي")}</option></select></div><div class="field"><label for="ctD">${T("اليوم (للأسبوعي)")}</label><select id="ctD">${DAYS.map((d,i)=>`<option value="${i}">${esc(L(d))}</option>`).join("")}</select></div>
+    <div class="field"><label for="ctP">${T("الصور")}</label><select id="ctP"><option value="each">${T("صورة لكل بند")}</option><option value="one">${T("صورة واحدة")}</option><option value="none">${T("بدون صور")}</option></select></div></div>
+    <div class="field" style="margin-top:8px"><label for="ctI">${T("البنود (كل بند في سطر)")}</label><textarea id="ctI" rows="4"></textarea></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" data-act="addCt">${T("إضافة المهمة")}</button></div></div>`;
+  h+=`<div class="card soft"><div class="card-h"><h2>${T("أصناف الجرد")}</h2><span class="note num">${invItems().length}</span></div><p class="note" style="margin:0 0 8px">${T("كل صنف في سطر: الاسم | الوحدة")}</p><textarea id="invItemsTx" rows="8" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit" dir="ltr">${esc(invItems().map(x=>x.n+" | "+(x.u||"")).join("\n"))}</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-act="saveInvItems">${T("حفظ أصناف الجرد")}</button></div></div>`;
+  return h;
+}
+function readWk(){ return [...document.querySelectorAll("tr[data-wk]")].map(tr=>({n:tr.querySelector("[data-wkn]").value,s:tr.querySelector("[data-wks]").value})); }
+document.addEventListener("input",e=>{ if(e.target.dataset&&e.target.dataset.wkn!=null) S.wkDraft=readWk(); });
+document.addEventListener("change",e=>{ if(e.target.dataset&&e.target.dataset.wks!=null) S.wkDraft=readWk(); });
+async function taskAdminAction(act,b){
+  if (act==="addWk"){ S.wkDraft=readWk().concat([{n:"",s:S.teamShift}]); render(true); const all=document.querySelectorAll("[data-wkn]"); if(all.length) all[all.length-1].focus(); return; }
+  if (act==="saveWk"){ const list=readWk().map(x=>({n:x.n.trim().slice(0,120),s:x.s})).filter(x=>x.n); const s1=clone(S.settings); s1.weeklyTasks=list; s1.weeklyDay=+$("wkDay").value; S.wkDraft=null; if(await save("settings","main",s1)){ render(true); toast(T("تم الحفظ.")); } return; }
+  if (act==="addCt"){ const t=$("ctT").value.trim().slice(0,80), items=$("ctI").value.split(/\n+/).map(x=>x.trim().slice(0,200)).filter(Boolean).slice(0,60); if(!t||!items.length){ toast(T("اكتب اسم المهمة وبنداً واحداً على الأقل.")); return; }
+    const s1=clone(S.settings); s1.customTasks=customTasks().concat([{id:Date.now().toString(36),t,s:$("ctS").value,f:$("ctF").value,d:+$("ctD").value,p:$("ctP").value,items}]); if(await save("settings","main",s1)){ render(true); toast(T("تمت إضافة المهمة.")); } return; }
+  if (act==="delCt"){ if(b.dataset.c){ const s1=clone(S.settings); s1.customTasks=customTasks().filter(c=>c.id!==b.dataset.id); if(await save("settings","main",s1)) render(true); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } return; }
+  if (act==="saveInvItems"){ const list=$("invItemsTx").value.split(/\n+/).map(l=>{ const p=l.split("|"); return {n:(p[0]||"").trim().slice(0,80),u:(p[1]||"").trim().slice(0,10)}; }).filter(x=>x.n); if(!list.length) return; const s1=clone(S.settings); s1.invItems=list; if(await save("settings","main",s1)){ render(true); toast(T("تم الحفظ.")); } return; }
+}
+/* ---------- back navigation everywhere ---------- */
+const NAV={stack:[],last:null,snap:null,restoring:false};
+const navKey = () => JSON.stringify([S.tab,S.branch||"",S.taskOpen||"",S.empOpen||"",S.empEdit?(S.empEdit.id||"new"):"",S.teamShift,S.teamDate]);
+const navSnap = () => ({tab:S.tab,branch:S.branch,taskOpen:S.taskOpen,empOpen:S.empOpen,empEdit:S.empEdit?clone(S.empEdit):null,teamShift:S.teamShift,teamDate:S.teamDate,y:window.scrollY});
+function navTrack(){ if(S.auth!=="in"){ NAV.last=null; NAV.stack.length=0; return; } const k=navKey();
+  if(NAV.last!==null&&k!==NAV.last&&!NAV.restoring){ NAV.stack.push(NAV.snap); if(NAV.stack.length>60) NAV.stack.shift(); try{ history.pushState({n:NAV.stack.length},""); }catch(e){} }
+  NAV.last=k; NAV.snap=navSnap(); NAV.restoring=false; const bb=$("backBtn"); if(bb){ bb.classList.toggle("none",!NAV.stack.length); bb.textContent=(rtl()?"→ ":"← ")+T("رجوع"); } }
+function navBack(){ const sn=NAV.stack.pop(); if(!sn) return; NAV.restoring=true;
+  Object.assign(S,{tab:sn.tab,branch:sn.branch,empOpen:sn.empOpen,empEdit:sn.empEdit,teamShift:sn.teamShift,teamDate:sn.teamDate,taskOpen:null,taskDraft:null,invDraft:null}); S.docsFor=null; closeModal(); closeMenu(); closeSide();
+  const b=selBranch(); if(sn.taskOpen&&b){ if(sn.taskOpen==="inv") openInv(b); else openTask(b,sn.taskOpen); } else render(true); setTimeout(()=>window.scrollTo(0,sn.y||0),0); }
+window.addEventListener("popstate",()=>{ if(NAV.stack.length) navBack(); });
 function vMore(){
   const p=S.settings.perms||{};
   let h=`<h1>${T("المزيد")}</h1><p class="sub">${T(S.admin?"إعدادات المدير وصلاحيات الموظفين":"حسابك في وضع الموظف، للعرض فقط")}</p><div class="stack">`;
@@ -1693,7 +1822,7 @@ function render(force){
   $("mLabel").textContent=mLabel(S.month);
   const rl=$("role"); rl.textContent=!S.ready?"…":T(S.admin?(S.preview?"معاينة موظف":"المدير"):"موظف"); rl.className="role"+(isAdmin()?"":" emp");
   $("banner").innerHTML = S.auth==="in"&&S.slow ? `<div class="banner">${T("تعذّر الوصول للبيانات حتى الآن. قد تكون المعروضة قديمة.")}</div>` : "";
-  renderSide(); renderMenu();
+  renderSide(); renderMenu(); navTrack();
   const ub=$("undoBtn"); ub.classList.toggle("none",!UNDO.length); ub.textContent="↶ "+T("تراجع");
   killCharts();
   const inApp=S.auth==="in"; $("role").style.display=inApp?"":"none"; document.querySelector(".month").style.display=inApp?"":"none"; $("nav").style.display=inApp?"":"none";
@@ -2000,6 +2129,7 @@ async function downloadReport(){
 /* ---------- actions ---------- */
 $("langBtn").onclick=()=>setLang(rtl()?"en":"ar");
 $("undoBtn").onclick=()=>undoLast();
+$("backBtn").onclick=()=>{ if(!NAV.stack.length) return; let ok=false; try{ history.back(); ok=true; }catch(e){} if(!ok) navBack(); };
 document.addEventListener("click",async e=>{
   const lg=e.target.closest("[data-lang]"); if(lg){ setLang(lg.dataset.lang); return; }
   const mb=e.target.closest("[data-menuby]"); if(mb){ S.menuBy=mb.dataset.menuby; render(true); return; }
@@ -2008,6 +2138,7 @@ document.addEventListener("click",async e=>{
   const eo=e.target.closest("[data-emp]"); if(eo){ S.empOpen=eo.dataset.emp; S.docsFor=null; render(true); window.scrollTo(0,0); return; }
   const zm=e.target.closest("[data-zoom]"); if(zm&&S.taskDraft){ const src=(S.taskDraft.photos||{})[zm.dataset.zoom]; if(src){ $("sheet").innerHTML=`<img alt="" style="width:100%;border-radius:10px" src="${esc(src)}"><div class="row" style="margin-top:12px"><button class="btn" id="zmClose">${T("إغلاق")}</button></div>`; $("modal").classList.add("on"); $("zmClose").onclick=closeModal; } return; }
   const tkb=e.target.closest("[data-task]"); if(tkb){ const tb0=selBranch(); if(tb0&&can("tasks")) openTask(tb0,tkb.dataset.task); return; }
+  const nab=e.target.closest("[data-na]"); if(nab&&S.taskDraft){ const k=nab.dataset.na; if(S.taskDraft.vals[k]==="NA") delete S.taskDraft.vals[k]; else S.taskDraft.vals[k]="NA"; render(true); return; }
   const ynb=e.target.closest("[data-yn]"); if(ynb&&S.taskDraft){ const [yi,yv]=ynb.dataset.yn.split(":"); S.taskDraft.vals[yi]=yv; if(yv==="y") delete S.taskDraft.notes[yi]; render(true); return; }
   const bc=e.target.closest("[data-br]"); if(bc){ S.branch=bc.dataset.br||null; closeSide(); render(true); window.scrollTo(0,0); return; }
   const tb=e.target.closest("[data-tab]"); if(tb){ S.tab=tb.dataset.tab; render(true); window.scrollTo(0,0); return; }
@@ -2015,6 +2146,7 @@ document.addEventListener("click",async e=>{
   const act=b.dataset.act;
   if (act==="dlReport") return downloadReport();
   if (act==="saveEmp"||act==="copyEmp"||act==="dlTeam") return teamAction(act);
+  if (act==="saveInv"||act==="copyInv") return invAction(act);
   if (act==="saveTask"||act==="copyTask"||act==="backTasks"||act==="dlTasks") return taskAction(act);
   if (act==="upStock"||act==="saveStock"||act==="copyOrder"||act==="dlOrder"){ const ob=selBranch(); if(!ob||!can("order")) return;
     if (act==="upStock") return $("fileStock").click();
@@ -2063,6 +2195,8 @@ document.addEventListener("click",async e=>{
   else if (act==="upOrder") $("fileOrder").click();
   else if (act==="upStockAll") $("fileStock").click();
   else if (act==="upPrice") $("filePrice").click();
+  else if (["addWk","saveWk","addCt","delCt","saveInvItems"].includes(act)) taskAdminAction(act,b);
+  else if (act==="delInv"){ if(b.dataset.c){ const tb2=selBranch(); if(tb2){ S.taskOpen=null; S.invDraft=null; removeDoc("invent",invId(S.teamDate,tb2)); } } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="upEmpXls") $("fileEmpXls").click();
   else if (act==="upEmpPdf") $("fileEmpPdf").click();
   else if (act==="upEmpPdfs") $("fileEmpPdfs").click();
@@ -2086,7 +2220,7 @@ document.addEventListener("click",async e=>{
   else if (act==="saveLimits"){ const s6=clone(S.settings); s6.taskLimits={};
     document.querySelectorAll("tr[data-lim]").forEach(tr=>{ const mn=toNum(tr.querySelector("[data-lmin]").value), mx=toNum(tr.querySelector("[data-lmax]").value); if(mn!=null&&mx!=null&&mx>=mn) s6.taskLimits[tr.dataset.lim]={min:mn,max:mx}; });
     if(await save("settings","main",s6)){ render(true); toast(T("تم حفظ المدى.")); } }
-  else if (act==="delTask"){ if(b.dataset.c){ const tb1=selBranch(), df=TASK_DEFS.find(d=>d.id===S.taskOpen); if(!tb1||!df) return; const id=taskId(tb1,df);
+  else if (act==="delTask"){ if(b.dataset.c){ const tb1=selBranch(), df=defById(S.taskOpen); if(!tb1||!df) return; const id=taskId(tb1,df);
       if(S.taskLocal[id]){ delete S.taskLocal[id]; try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e){} } S.taskOpen=null; S.taskDraft=null;
       if(S.tasklog[id]){ if(S.db){ try{ await S.db.doc("taskpics/"+id).delete(); }catch(e){} } removeDoc("tasklog",id); } else render(true); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="saveSplit"){ const tb=selBranch(); if(!tb) return; const mv=toNum($("inSplitM").value); if(mv==null||mv<0||mv>100) return;
@@ -2161,7 +2295,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
   firebase.initializeApp(cfg);
   const auth=firebase.auth(), fs=firebase.firestore(); S.fbAuth=auth;
   let unsubs=[];
-  const DATA=["employees","menub","sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
+  const DATA=["invent","employees","menub","sales","waste","reviews","menu","wasteb","comments","orders","stock","prices","staff","empsales","tasklog","members"];
   auth.onAuthStateChanged(async u=>{
     unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[]; DATA.forEach(c=>S[c]={}); S.salesRank={}; S.me=null; S.admin=false; S.db=null; UNDO.length=0;
     if (!u){ S.auth="out"; S.email=""; S.ready=true; render(true); return; }
@@ -2177,6 +2311,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     S.docsFor=null; S.empdocs=null; S.empOpen=null; S.empEdit=null;
     if (S.admin){
       sub(fs.collection("employees"),q=>{ S.employees=map(q); render(); });
+      sub(fs.collection("invent").orderBy("date","desc").limit(600),q=>{ S.invent=map(q); render(); });
       ["menu","menub","sales","waste","reviews","wasteb","orders","stock","staff","members"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("comments").orderBy("date","desc").limit(300),q=>{ S.comments=map(q); render(); });
       sub(fs.collection("empsales").orderBy("date","desc").limit(1500),q=>{ S.empsales=map(q); render(); });
@@ -2188,7 +2323,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     } else {
       sub(fs.collection("employees").where("email","==",email),q=>{ S.employees=map(q); render(); });
       const b=me.branch; if(!b) return;
-      ["menub","reviews","wasteb","comments","orders","stock","staff","empsales","tasklog"].forEach(c=>sub(fs.collection(c).where("branch","==",b),q=>{ S[c]=map(q); render(); }));
+      ["invent","menub","reviews","wasteb","comments","orders","stock","staff","empsales","tasklog"].forEach(c=>sub(fs.collection(c).where("branch","==",b),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("salesb").where("branch","==",b),q=>{ const o={}, rk={}; q.docs.forEach(d=>{ const x=d.data(); o[x.month]={branches:{[b]:x.total||0},bt:{[b]:x.target||0},bd:{[b]:x.days||{}},bo:{[b]:x.orders||0},bod:{[b]:x.od||{}},days:x.days||{},file:x.file||""}; rk[x.month]={r:x.rk||0,n:x.rn||0}; }); S.sales=o; S.salesRank=rk; render(); });
     }
   });
