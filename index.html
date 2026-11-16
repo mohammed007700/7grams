@@ -471,6 +471,7 @@ const EN = {
 "أصناف الجرد":"Inventory items","كل صنف في سطر: الاسم | الوحدة":"One item per line: name | unit","حفظ أصناف الجرد":"Save inventory items","لا ينطبق":"N/A","رجوع":"Back",
 "بالعربي":"Arabic","بالإنجليزي":"English","اسم المهمة بالعربي":"Task name in Arabic","اسم المهمة بالإنجليزي":"Task name in English","البنود (كل بند في سطر: عربي | English)":"Items (one per line: Arabic | English)",
 "اكتب الاسم بالعربي والإنجليزي عشان تتغير المهمة مع لغة التطبيق. إذا تركت واحد فاضي يظهر الثاني.":"Write the name in Arabic and English so the task follows the app language. If one is empty, the other is shown.",
+"تظهر يوم {d} ({n} مهمة لهذا الشفت)":"Shown on {d} ({n} tasks for this shift)",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1356,7 +1357,7 @@ function vTasks(){
     h+=`<div class="grid g3">${kpi(T("إنجاز اليوم"),pc(dp),T("{a} من {b} مهمة",{a:N(dp.done),b:N(dp.n)}))}${kpi(T("إنجاز الصباحي"),pc(dp.m),T("{a} من {b} مهمة",{a:N(dp.m.done),b:N(dp.m.n)}))}${kpi(T("إنجاز الليلي"),pc(dp.e),T("{a} من {b} مهمة",{a:N(dp.e.done),b:N(dp.e.n)}))}</div>`; }
   const def=S.taskOpen&&defs.find(d=>d.id===S.taskOpen);
   if (!def) { S.taskOpen=null;
-    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=d.type==="inv"?invStatus(b,S.teamDate,S.teamShift):taskStatus(d,docs[taskId(b,d)]); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${statusPill(st)}</button>`; }).join("")}</div>`;
+    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=d.type==="inv"?invStatus(b,S.teamDate,S.teamShift):taskStatus(d,docs[taskId(b,d)]); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${statusPill(st)}</button>`; }).join("")}${(()=>{ if(defs.some(d=>d.id==="weekly")) return ""; const n=weeklyList().filter(x=>(x.s||"m")===S.teamShift||x.s==="b").length; return n?`<div class="trow" style="opacity:.6;cursor:default"><span class="tt"><b>${T("المهام الأسبوعية")}</b><span class="note">${T("تظهر يوم {d} ({n} مهمة لهذا الشفت)",{d:esc(L(DAYS[weeklyDay()])),n:N(n)})}</span></span></div>`:""; })()}</div>`;
     return h+(a?taskAdminCard()+limitsCard():"")+"</div>";
   }
   if (def.type==="inv") return h+vInv(b)+"</div>";
