@@ -614,6 +614,7 @@ function salesStats(mk,branch){
   const curMk = mkOf(now.getFullYear(), now.getMonth()+1);
   const cal = mk<curMk ? D : mk===curMk ? now.getDate()-1 : 0;
   const left = Math.max(D-cal,0);
+  const avgDays = elapsed || cal;
   const remaining = Math.max(target-total,0);
   const p = target ? total/target : null;
   const expected = cal/D;
@@ -628,8 +629,8 @@ function salesStats(mk,branch){
   const orders = +doc.orders||0;
   return {doc,days,keys,D,total,target,btSum,elapsed,cal,exp:target*cal/D,left,remaining,p,st,orders,aov:orders?total/orders:null,
     need: target && left>0 ? remaining/left : null,
-    avg: elapsed ? total/elapsed : null,
-    forecast: elapsed ? total/elapsed*D : null, has: keys.length>0 || total>0};
+    avgDays, avg: avgDays&&total ? total/avgDays : null,
+    forecast: avgDays&&total ? total/avgDays*D : null, has: keys.length>0 || total>0};
 }
 function branchStatus(ach,pace){
   if (ach==null) return {c:"mute",t:"لا يوجد تارقت"};
@@ -643,7 +644,7 @@ function branchNames(st){ return [...new Set([...Object.keys(st.doc.branches||{}
 function branchRows(st){
   const bt=st.doc.bt||{}, br=st.doc.branches||{}, bo=st.doc.bo||{}, frac=st.cal/st.D;
   const mk=(n,t,s,o)=>{ const exp=t*frac, rem=Math.max(t-s,0), ach=t?s/t:null, pace=exp>0?s/exp:null;
-    return {n,t,s,o,aov:o?s/o:null,avg:st.elapsed?s/st.elapsed:null,exp,vr:s-exp,ach,pace,rem,need:t&&st.left>0?rem/st.left:null,st:branchStatus(ach,pace)}; };
+    return {n,t,s,o,aov:o?s/o:null,avg:st.avgDays&&s?s/st.avgDays:null,exp,vr:s-exp,ach,pace,rem,need:t&&st.left>0?rem/st.left:null,st:branchStatus(ach,pace)}; };
   const rows=branchNames(st).map(n=>mk(n,+bt[n]||0,+br[n]||0,+bo[n]||0)).sort((a,b)=>(b.ach==null?-1:b.ach)-(a.ach==null?-1:a.ach)||b.s-a.s);
   rows.forEach((r,i)=>r.rank=i+1);
   const tot=mk("",rows.reduce((a,r)=>a+r.t,0),rows.reduce((a,r)=>a+r.s,0),rows.reduce((a,r)=>a+r.o,0));
@@ -763,7 +764,7 @@ function salesHero(st,b){
     </div></div></div></div>`;
 }
 function paceKpis(st, full){
-  return `<div class="grid g3">${kpi(T("المطلوب يومياً للوصول"), st.need!=null?money(st.need)+SAR():"—", st.left?T("باقي {n} يوم",{n:N(st.left)}):"")}${kpi(T("متوسط البيع اليومي"), st.avg!=null?money(st.avg)+SAR():"—", full&&st.elapsed?T("على {n} يوم",{n:N(st.elapsed)}):"")}${kpi(T("المتوقع نهاية الشهر"), st.forecast!=null?money(st.forecast)+SAR():"—", st.forecast!=null&&st.target? T("يساوي {p} من التارقت",{p:pct(st.forecast/st.target,0)}):"")}</div>`;
+  return `<div class="grid g3">${kpi(T("المطلوب يومياً للوصول"), st.need!=null?money(st.need)+SAR():"—", st.left?T("باقي {n} يوم",{n:N(st.left)}):"")}${kpi(T("متوسط البيع اليومي"), st.avg!=null?money(st.avg)+SAR():"—", full&&st.avgDays?T("على {n} يوم",{n:N(st.avgDays)}):"")}${kpi(T("المتوقع نهاية الشهر"), st.forecast!=null?money(st.forecast)+SAR():"—", st.forecast!=null&&st.target? T("يساوي {p} من التارقت",{p:pct(st.forecast/st.target,0)}):"")}</div>`;
 }
 function branchTable(st){
   const {rows,tot}=branchRows(st); if(!rows.length) return "";
@@ -776,7 +777,7 @@ function branchTable(st){
 }
 function orderKpis(st){
   if(!st.orders) return "";
-  return `<div class="grid g3">${kpi(T("عدد الطلبات"),N(nf0.format(st.orders)))}${kpi(T("متوسط الفاتورة"),N(nf2.format(st.aov))+SAR(),T("المبيعات ÷ عدد الطلبات"))}${kpi(T("متوسط الطلبات اليومي"),st.elapsed?N(nf0.format(st.orders/st.elapsed)):"—",st.elapsed?T("على {n} يوم",{n:N(st.elapsed)}):"")}</div>`;
+  return `<div class="grid g3">${kpi(T("عدد الطلبات"),N(nf0.format(st.orders)))}${kpi(T("متوسط الفاتورة"),N(nf2.format(st.aov))+SAR(),T("المبيعات ÷ عدد الطلبات"))}${kpi(T("متوسط الطلبات اليومي"),st.avgDays?N(nf0.format(st.orders/st.avgDays)):"—",st.avgDays?T("على {n} يوم",{n:N(st.avgDays)}):"")}</div>`;
 }
 function vHome(){
   const b=selBranch(), locked=!!lockBranch();
