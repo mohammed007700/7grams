@@ -488,6 +488,7 @@ const EN = {
 "مرتبة من الأعلى نسبة تالف من الاستلام":"Sorted by highest waste vs received",
 "النسبة = التالف ÷ المستلم من نفس المنتج. المنتجات اللي استلامها أقل من {n} حبة ما تدخل في اختيار الأعلى.":"Rate = waste ÷ received of the same product. Products with under {n} pcs received are not picked as the top item.",
 "تم تحليل التوالف لـ {b} فرع لشهر {m}.":"Waste analysed for {b} branches for {m}.",
+"غير محفوظ":"Not saved",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1346,7 +1347,7 @@ function shrinkPhoto(file){ return new Promise((res,rej)=>{ const url=URL.create
     c.getContext("2d").drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg",0.55)); }catch(e){ rej(e); } };
   im.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("img")); }; im.src=url; }); }
 document.addEventListener("change",async e=>{ const t=e.target; if(!t.dataset||t.dataset.ph==null||!S.taskDraft) return; const f=t.files&&t.files[0]; if(!f) return;
-  try{ const d=await shrinkPhoto(f); if(!S.taskDraft) return; (S.taskDraft.photos||(S.taskDraft.photos={}))[t.dataset.ph]=d; render(true); }catch(err){ toast(T("تعذّر قراءة الصورة.")); } });
+  try{ const d=await shrinkPhoto(f); if(!S.taskDraft) return; (S.taskDraft.photos||(S.taskDraft.photos={}))[t.dataset.ph]=d; keepDraft(); render(true); }catch(err){ toast(T("تعذّر قراءة الصورة.")); } });
 function taskStatus(def,doc){
   if (!doc) return {done:false,issues:0,filled:0,total:0,started:false};
   const v=doc.vals||{}; let issues=0, filled=0, total=0;
@@ -1358,9 +1359,28 @@ function taskStatus(def,doc){
 }
 const statusPill = st => !st.started ? `<span class="pill mute">${T("لم يُنجز")}</span>` : !st.done ? `<span class="pill warn">${T("ناقص")} ${N(st.filled+"/"+st.total)}</span>` : st.issues ? `<span class="pill bad">${T("{n} ملاحظة",{n:N(st.issues)})}</span>` : `<span class="pill good">${T("مكتمل")}</span>`;
 const issueHtml = x => x ? `<b>${esc(L(x.msg))}</b>${x.sol?`<span>${T("الحل")}: ${esc(L(x.sol))}</span>`:""}` : "";
+/* unsaved task drafts: kept on the device until the task is saved */
+let DRAFTS={}; try{ DRAFTS=JSON.parse(localStorage.getItem("7g-drafts")||"{}")||{}; }catch(e){ DRAFTS={}; }
+let draftT=null;
+const invDraftKey = (b,date,sh) => "inv|"+invId(date,b)+"|"+sh;
+function draftKeyNow(){ const b=selBranch(); if(!b||!S.taskOpen) return null; if(S.taskOpen==="inv") return invDraftKey(b,S.teamDate,S.teamShift); const d=defById(S.taskOpen); return d?taskId(b,d):null; }
+function persistDrafts(){ const cut=Date.now()-3*864e5; Object.keys(DRAFTS).forEach(k=>{ if(!DRAFTS[k]||(DRAFTS[k].at||0)<cut) delete DRAFTS[k]; });
+  try{ localStorage.setItem("7g-drafts",JSON.stringify(DRAFTS)); }
+  catch(e){ const lite={}; Object.keys(DRAFTS).forEach(k=>{ lite[k]=Object.assign({},DRAFTS[k],{photos:{}}); }); try{ localStorage.setItem("7g-drafts",JSON.stringify(lite)); }catch(e2){} } }
+function keepDraft(){ const k=draftKeyNow(); if(!k||!S.taskDraft) return; const dr=S.taskDraft;
+  DRAFTS[k]={vals:dr.vals||{},notes:dr.notes||{},by:dr.by||"",photos:dr.photos||{},inv:S.taskOpen==="inv"?S.invDraft:null,at:Date.now(),b:selBranch(),id:S.taskOpen,date:S.teamDate,sh:S.teamShift};
+  try{ localStorage.setItem("7g-resume",k); }catch(e){}
+  clearTimeout(draftT); draftT=setTimeout(persistDrafts,300); }
+function dropDraft(k){ if(!k) return; delete DRAFTS[k]; try{ if(localStorage.getItem("7g-resume")===k) localStorage.removeItem("7g-resume"); }catch(e){} clearTimeout(draftT); persistDrafts(); }
+const hasDraft = k => !!DRAFTS[k];
+function resumeDraft(){ if(S.tab!=="home"||S.taskOpen) return; let k=null; try{ k=localStorage.getItem("7g-resume"); }catch(e){} const d=k&&DRAFTS[k]; if(!d||d.date!==todayKey||!can("tasks")) return;
+  if(isAdmin()) S.branch=d.b; if(selBranch()!==d.b) return; S.tab="tasks"; S.teamDate=d.date; S.teamShift=d.sh; openTask(d.b,d.id); }
+window.addEventListener("pagehide",()=>{ clearTimeout(draftT); persistDrafts(); });
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden"){ clearTimeout(draftT); persistDrafts(); } });
 function openTask(b,id){ if(id==="inv") return openInv(b); const def=defById(id); if(!def) return; const ex=allTasks()[taskId(b,def)];
   S.taskOpen=id; const tid=taskId(b,def), loc=S.taskLocal[tid];
-  S.taskDraft={vals:ex?clone(ex.vals):{},notes:ex?clone(ex.notes):{},by:ex&&ex.by?ex.by:(S.taskBy||""),photos:loc&&loc.photos?clone(loc.photos):{}}; render(true); window.scrollTo(0,0);
+  const dd=DRAFTS[tid];
+  S.taskDraft=dd?{vals:clone(dd.vals),notes:clone(dd.notes),by:dd.by||(S.taskBy||""),photos:clone(dd.photos)}:{vals:ex?clone(ex.vals):{},notes:ex?clone(ex.notes):{},by:ex&&ex.by?ex.by:(S.taskBy||""),photos:loc&&loc.photos?clone(loc.photos):{}}; render(true); window.scrollTo(0,0);
   if (S.db && S.tasklog[tid] && Object.keys(S.tasklog[tid].ph||{}).length){ const dr=S.taskDraft;
     S.db.doc("taskpics/"+tid).get().then(sn=>{ if(S.taskDraft!==dr||!sn.exists) return; const pp=(sn.data()||{}).photos||{}; dr.photos=Object.assign({},pp,dr.photos); render(true); }).catch(()=>{}); } }
 function vTasks(){
@@ -1380,7 +1400,7 @@ function vTasks(){
     h+=`<div class="grid g3">${kpi(T("إنجاز اليوم"),pc(dp),T("{a} من {b} مهمة",{a:N(dp.done),b:N(dp.n)}))}${kpi(T("إنجاز الصباحي"),pc(dp.m),T("{a} من {b} مهمة",{a:N(dp.m.done),b:N(dp.m.n)}))}${kpi(T("إنجاز الليلي"),pc(dp.e),T("{a} من {b} مهمة",{a:N(dp.e.done),b:N(dp.e.n)}))}</div>`; }
   const def=S.taskOpen&&defs.find(d=>d.id===S.taskOpen);
   if (!def) { S.taskOpen=null;
-    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=d.type==="inv"?invStatus(b,S.teamDate,S.teamShift):taskStatus(d,docs[taskId(b,d)]); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${statusPill(st)}</button>`; }).join("")}${(()=>{ if(defs.some(d=>d.id==="weekly")) return ""; const n=weeklyList().filter(x=>(x.s||"m")===S.teamShift||x.s==="b").length; return n?`<div class="trow" style="opacity:.6;cursor:default"><span class="tt"><b>${T("المهام الأسبوعية")}</b><span class="note">${T("تظهر يوم {d} ({n} مهمة لهذا الشفت)",{d:esc(L(DAYS[weeklyDay()])),n:N(n)})}</span></span></div>`:""; })()}</div>`;
+    h+=`<div class="card"><div class="card-h"><h2>${T("مهام الشفت")} · ${shiftName(S.teamShift)}</h2></div>${defs.map(d=>{ const st=d.type==="inv"?invStatus(b,S.teamDate,S.teamShift):taskStatus(d,docs[taskId(b,d)]); const dk=d.type==="inv"?invDraftKey(b,S.teamDate,S.teamShift):taskId(b,d); return `<button class="trow" data-task="${d.id}"><span class="tt"><b>${esc(L(d.title))}</b><span class="note num">${d.code}</span></span>${hasDraft(dk)?`<span class="pill warn">${T("غير محفوظ")}</span>`:""}${statusPill(st)}</button>`; }).join("")}${(()=>{ if(defs.some(d=>d.id==="weekly")) return ""; const n=weeklyList().filter(x=>(x.s||"m")===S.teamShift||x.s==="b").length; return n?`<div class="trow" style="opacity:.6;cursor:default"><span class="tt"><b>${T("المهام الأسبوعية")}</b><span class="note">${T("تظهر يوم {d} ({n} مهمة لهذا الشفت)",{d:esc(L(DAYS[weeklyDay()])),n:N(n)})}</span></span></div>`:""; })()}</div>`;
     return h+(a?taskAdminCard()+limitsCard():"")+"</div>";
   }
   if (def.type==="inv") return h+vInv(b)+"</div>";
@@ -1436,6 +1456,7 @@ async function taskAction(act){
     const cut=new Date(Date.now()-2*864e5).toISOString().slice(0,10); Object.keys(S.taskLocal).forEach(k=>{ if(S.taskLocal[k].date<cut) delete S.taskLocal[k].photos; });
     try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }
     catch(e){ Object.keys(S.taskLocal).forEach(k=>{ if(k!==id) delete S.taskLocal[k].photos; }); try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e2){ if(S.taskLocal[id]) delete S.taskLocal[id].photos; try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e3){} } }
+    dropDraft(id);
     if (picsFail){ S.taskOpen=null; S.taskDraft=null; render(true); toast(T("تم الحفظ بدون الصور لأن مساحة التخزين امتلأت.")); return; }
     S.taskOpen=null; S.taskDraft=null; render(true);
     toast(T(st.issues?(shared?"تم الحفظ. فيه {n} ملاحظة تحتاج معالجة.":"تم الحفظ على هذا الجهاز فقط، وفيه {n} ملاحظة. انسخ النتيجة وأرسلها للمدير."):(shared?"تم حفظ المهمة.":"تم الحفظ على هذا الجهاز فقط. انسخ النتيجة وأرسلها للمدير."),{n:st.issues})); }
@@ -1737,7 +1758,8 @@ function invStatus(b,date,sh){ const doc=(S.invent||{})[invId(date,b)]; if(!doc|
   return {done:filled>=it.length,issues,filled,total:it.length,started:true}; }
 function openInv(b){ const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, rows=clone(((doc&&doc[sh])||{}).rows||{});
   if (sh==="m"&&!(doc&&doc.m)){ const pv=prevInv(b,S.teamDate); if(pv) invItems().forEach(x=>{ const c=invCalc(pv,x,null,""); if(c.e!=null) rows[x.n]=Object.assign({o:String(c.e)},rows[x.n]); }); }
-  S.taskOpen="inv"; S.invDraft=rows; S.taskDraft={by:((doc&&doc[sh])||{}).by||S.taskBy||"",vals:{},notes:{},photos:{}}; render(true); window.scrollTo(0,0); }
+  const dd=DRAFTS[invDraftKey(b,S.teamDate,sh)];
+  S.taskOpen="inv"; S.invDraft=dd&&dd.inv?clone(dd.inv):rows; S.taskDraft={by:(dd&&dd.by)||((doc&&doc[sh])||{}).by||S.taskBy||"",vals:{},notes:{},photos:{}}; render(true); window.scrollTo(0,0); }
 function vInv(b){
   const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, dr=S.invDraft||{}, a=isAdmin();
   const cols=[["o","افتتاحي","m"],["r","مستلم","m"],["ti","تحويل وارد +","m"],["tin","إجمالي الوارد",""],["to","تحويل صادر -","n"],["w","تالف","n"],["tout","إجمالي الصادر",""],["e","الجرد النهائي","n"],["cons","الاستهلاك",""],["s","المباع (POS)","n"],["vr","الفرق",""],["sr","ر.س",""]];
@@ -1765,7 +1787,7 @@ async function invAction(act){
     S.taskBy=by; try{ localStorage.setItem("7g-by",by); }catch(e){}
     const rows={}, keys=sh==="m"?["o","r","ti"]:["to","w","e","s"]; invItems().forEach(it=>{ const r=S.invDraft[it.n]||{}, o={}; keys.forEach(k=>{ if(r[k]!=null&&r[k]!=="") o[k]=String(r[k]).slice(0,20); }); if(Object.keys(o).length) rows[it.n]=o; });
     const d=new Date(), doc=Object.assign({date:S.teamDate,branch:b},clone(cur||{})); doc.date=S.teamDate; doc.branch=b; doc[sh]={by:by.slice(0,60),time:pad(d.getHours())+":"+pad(d.getMinutes()),rows};
-    if (await save("invent",id,doc)){ S.taskOpen=null; S.invDraft=null; render(true); toast(T(sh==="m"?"تم حفظ جرد الصباح.":"تم قفل الجرد.")); } return; }
+    if (await save("invent",id,doc)){ dropDraft(invDraftKey(b,S.teamDate,sh)); S.taskOpen=null; S.invDraft=null; render(true); toast(T(sh==="m"?"تم حفظ جرد الصباح.":"تم قفل الجرد.")); } return; }
 }
 /* admin: weekly tasks, extra tasks, inventory items */
 function taskAdminCard(){
@@ -2181,6 +2203,7 @@ async function onFile(kind,input){
 }
 $("fileSales").addEventListener("change",e=>onFile("sales",e.target));
 $("fileWaste").addEventListener("change",e=>onFile("waste",e.target));
+document.addEventListener("input",e=>{ const t=e.target; if(S.taskOpen&&S.taskDraft&&t&&t.closest&&t.closest("#main")) keepDraft(); });
 $("fileMenu").addEventListener("change",e=>onFile("menu",e.target));
 $("fileOrder").addEventListener("change",e=>onFile("order",e.target));
 $("fileStock").addEventListener("change",e=>onFile("stock",e.target));
@@ -2221,8 +2244,8 @@ document.addEventListener("click",async e=>{
   const eo=e.target.closest("[data-emp]"); if(eo){ S.empOpen=eo.dataset.emp; S.docsFor=null; render(true); window.scrollTo(0,0); return; }
   const zm=e.target.closest("[data-zoom]"); if(zm&&S.taskDraft){ const src=(S.taskDraft.photos||{})[zm.dataset.zoom]; if(src){ $("sheet").innerHTML=`<img alt="" style="width:100%;border-radius:10px" src="${esc(src)}"><div class="row" style="margin-top:12px"><button class="btn" id="zmClose">${T("إغلاق")}</button></div>`; $("modal").classList.add("on"); $("zmClose").onclick=closeModal; } return; }
   const tkb=e.target.closest("[data-task]"); if(tkb){ const tb0=selBranch(); if(tb0&&can("tasks")) openTask(tb0,tkb.dataset.task); return; }
-  const nab=e.target.closest("[data-na]"); if(nab&&S.taskDraft){ const k=nab.dataset.na; if(S.taskDraft.vals[k]==="NA") delete S.taskDraft.vals[k]; else S.taskDraft.vals[k]="NA"; render(true); return; }
-  const ynb=e.target.closest("[data-yn]"); if(ynb&&S.taskDraft){ const [yi,yv]=ynb.dataset.yn.split(":"); S.taskDraft.vals[yi]=yv; if(yv==="y") delete S.taskDraft.notes[yi]; render(true); return; }
+  const nab=e.target.closest("[data-na]"); if(nab&&S.taskDraft){ const k=nab.dataset.na; if(S.taskDraft.vals[k]==="NA") delete S.taskDraft.vals[k]; else S.taskDraft.vals[k]="NA"; keepDraft(); render(true); return; }
+  const ynb=e.target.closest("[data-yn]"); if(ynb&&S.taskDraft){ const [yi,yv]=ynb.dataset.yn.split(":"); S.taskDraft.vals[yi]=yv; if(yv==="y") delete S.taskDraft.notes[yi]; keepDraft(); render(true); return; }
   const bc=e.target.closest("[data-br]"); if(bc){ S.branch=bc.dataset.br||null; closeSide(); render(true); window.scrollTo(0,0); return; }
   const tb=e.target.closest("[data-tab]"); if(tb){ S.tab=tb.dataset.tab; render(true); window.scrollTo(0,0); return; }
   const b=e.target.closest("[data-act]"); if(!b||b.tagName==="INPUT") return;
@@ -2279,7 +2302,7 @@ document.addEventListener("click",async e=>{
   else if (act==="upStockAll") $("fileStock").click();
   else if (act==="upPrice") $("filePrice").click();
   else if (["addWk","saveWk","addCt","delCt","saveInvItems"].includes(act)) taskAdminAction(act,b);
-  else if (act==="delInv"){ if(b.dataset.c){ const tb2=selBranch(); if(tb2){ S.taskOpen=null; S.invDraft=null; removeDoc("invent",invId(S.teamDate,tb2)); } } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
+  else if (act==="delInv"){ if(b.dataset.c){ const tb2=selBranch(); if(tb2){ dropDraft(invDraftKey(tb2,S.teamDate,S.teamShift)); S.taskOpen=null; S.invDraft=null; removeDoc("invent",invId(S.teamDate,tb2)); } } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="upEmpXls") $("fileEmpXls").click();
   else if (act==="upEmpPdf") $("fileEmpPdf").click();
   else if (act==="upEmpPdfs") $("fileEmpPdfs").click();
@@ -2304,7 +2327,7 @@ document.addEventListener("click",async e=>{
     document.querySelectorAll("tr[data-lim]").forEach(tr=>{ const mn=toNum(tr.querySelector("[data-lmin]").value), mx=toNum(tr.querySelector("[data-lmax]").value); if(mn!=null&&mx!=null&&mx>=mn) s6.taskLimits[tr.dataset.lim]={min:mn,max:mx}; });
     if(await save("settings","main",s6)){ render(true); toast(T("تم حفظ المدى.")); } }
   else if (act==="delTask"){ if(b.dataset.c){ const tb1=selBranch(), df=defById(S.taskOpen); if(!tb1||!df) return; const id=taskId(tb1,df);
-      if(S.taskLocal[id]){ delete S.taskLocal[id]; try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e){} } S.taskOpen=null; S.taskDraft=null;
+      if(S.taskLocal[id]){ delete S.taskLocal[id]; try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e){} } dropDraft(id); S.taskOpen=null; S.taskDraft=null;
       if(S.tasklog[id]){ if(S.db){ try{ await S.db.doc("taskpics/"+id).delete(); }catch(e){} } removeDoc("tasklog",id); } else render(true); } else { b.dataset.c="1"; b.textContent=T("تأكيد الحذف"); } }
   else if (act==="saveSplit"){ const tb=selBranch(); if(!tb) return; const mv=toNum($("inSplitM").value); if(mv==null||mv<0||mv>100) return;
     if(S.sfDraft) S.sfDraft.m=mv;
@@ -2386,7 +2409,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     let me=null; try{ const sn=await fs.doc("members/"+email).get(); if(sn.exists) me=sn.data(); }catch(e){}
     const owner=!!email && email===String(window.OWNER_EMAIL||"").trim().toLowerCase();
     if (!me&&!owner){ S.auth="noaccess"; S.ready=true; render(true); return; }
-    S.me=me; S.admin=owner||!!(me&&me.role==="admin"); S.db=fs; S.auth="in"; S.ready=true; S.tab="home"; render(true);
+    S.me=me; S.admin=owner||!!(me&&me.role==="admin"); S.db=fs; S.auth="in"; S.ready=true; S.tab="home"; render(true); setTimeout(()=>{ try{ resumeDraft(); }catch(e){} },1200);
     const map=q=>{ const o={}; q.docs.forEach(d=>o[d.id]=clone(d.data())); return o; };
     const sub=(ref,cb)=>unsubs.push(ref.onSnapshot(cb,()=>{}));
     sub(fs.doc("settings/main"),sn=>{ if(sn.exists){ const d=clone(sn.data()); d.perms=Object.assign({sales:true,menu:true,waste:true,reviews:true},d.perms); S.settings=d; } render(); });
