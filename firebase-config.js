@@ -8,3 +8,5 @@ window.FIREBASE_CONFIG = {
   appId: "1:668657758543:web:0f29218038fa7e7d9d953a"
 };
 window.OWNER_EMAIL = "osopp2016@gmail.com";
+/* مفتاح إشعارات الجوال: Firebase > Project settings > Cloud Messaging > Web Push certificates > Key pair */
+window.FCM_VAPID_KEY = "";

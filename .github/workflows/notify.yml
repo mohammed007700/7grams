@@ -1,0 +1,30 @@
+name: notifications
+# every 5 minutes: send staff actions to the admin's phone
+# 03:00 UTC = 6:00 Riyadh (morning shift reminder), 15:00 UTC = 18:00 Riyadh (night shift reminder)
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+    - cron: "0 3 * * *"
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "events, remind-m or remind-n"
+        default: "events"
+concurrency: notify
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save --no-audit --no-fund firebase-admin@12
+        working-directory: scripts
+      - run: node scripts/notify.mjs
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          SCHEDULE: ${{ github.event.schedule }}
+          MODE: ${{ inputs.mode }}

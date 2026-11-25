@@ -35,6 +35,8 @@ service cloud.firestore {
     match /invent/{id}   { allow read: if isAdmin() || mine(); allow create, update: if isAdmin() || writesMine(); allow delete: if isAdmin(); }
     match /employees/{id} { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
     match /empdocs/{id}   { allow read: if isAdmin() || (signedIn() && resource.data.email == email()); allow write: if isAdmin(); }
+    match /push/{id}   { allow read: if isAdmin(); allow create, update: if signedIn() && request.resource.data.email == email(); allow delete: if isAdmin() || (signedIn() && resource.data.email == email()); }
+    match /notify/{id} { allow read, update, delete: if isAdmin(); allow create: if signedIn() && request.resource.data.email == email(); }
   }
 }
 

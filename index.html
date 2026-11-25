@@ -279,6 +279,7 @@ nav.tabs button.on::before{content:"";position:absolute;top:-1px;width:28px;heig
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -493,6 +494,21 @@ const EN = {
 "تم تحليل التوالف لـ {b} فرع لشهر {m}.":"Waste analysed for {b} branches for {m}.",
 "غير محفوظ":"Not saved",
 "القراءة صحيحة":"Reading OK",
+"جرد كامل للشفت ويقفله":"Full count for the shift, then close it",
+"مقفول بواسطة {n} · {t}":"Closed by {n} · {t}",
+"لم يُقفل":"Not closed",
+"جرد شفت الصباح":"Morning shift count",
+"جرد شفت الليل":"Night shift count",
+"كل شفت يسوي جرد كامل لحاله ويقفله. الافتتاحي ينحط تلقائياً من الجرد النهائي لشفت الصباح.":"Each shift does its own full count and closes it. Opening comes from the morning shift's end count.",
+"قفل جرد الليل":"Close night count",
+"تم قفل جرد الليل.":"Night count closed.",
+"باقي {n} صنف بدون جرد نهائي. عبّه (ولو صفر) عشان تقفل الجرد.":"{n} items have no end count. Fill them (even 0) to close.",
+"هذا الجهاز ما يدعم الإشعارات. في الآيفون أضف التطبيق للشاشة الرئيسية وافتحه منها.":"This device does not support notifications. On iPhone, add the app to the Home Screen and open it from there.",
+"الإشعارات مرفوضة. فعّلها من إعدادات الجوال لهذا التطبيق.":"Notifications are blocked. Allow them for this app in the phone settings.",
+"تم تفعيل الإشعارات داخل التطبيق. إشعارات الجوال وهو مقفول تشتغل بعد إكمال إعداد Firebase.":"In-app notifications are on. Phone notifications while the app is closed start once Firebase setup is finished.",
+"فعّل الإشعارات":"Turn on notifications",
+"يوصلك تذكير بالمهام الساعة 6 الصبح و6 المغرب.":"Get task reminders at 6 AM and 6 PM.",
+"تفعيل":"Turn on",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -786,7 +802,7 @@ function orderKpis(st){
 }
 function vHome(){
   const b=selBranch(), locked=!!lockBranch();
-  let h=`<h1>${T("الرئيسية")}</h1><p class="sub">${T("ملخص {m}",{m:ML()})}${b?" · "+esc(b):""}</p><div class="stack">`;
+  let h=`<h1>${T("الرئيسية")}</h1><p class="sub">${T("ملخص {m}",{m:ML()})}${b?" · "+esc(b):""}</p><div class="stack">`+pushCard();
   let any=false;
   if (can("sales")) { any=true; const st=salesStats(S.month,b), stAll=b?salesStats(S.month):st;
     h+=salesHero(st,b);
@@ -1054,7 +1070,7 @@ document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||t.datase
 async function saveStock(b,quiet){
   const id=bid(b), items=clone(S.stockEdit[b]); let shared=false;
   try{ localStorage.setItem("7g-stock-"+id,JSON.stringify(items)); }catch(e){}
-  if (S.db){ recUndo("stock",id); try{ const d={branch:b,items,at:todayKey}; await S.db.doc("stock/"+id).set(d); S.stock[id]=d; shared=true; }catch(e){ UNDO.pop(); } }
+  if (S.db){ recUndo("stock",id); try{ const d={branch:b,items,at:todayKey}; await S.db.doc("stock/"+id).set(d); S.stock[id]=d; shared=true; notifyAdmin(["Stock updated","تم تحديث الستوك"],[`${Object.keys(items).length} items`,`${Object.keys(items).length} صنف`],b); }catch(e){ UNDO.pop(); } }
   if(!quiet) toast(T(shared?"تم حفظ الستوك.":"تم حفظ الستوك على هذا الجهاز فقط."));
 }
 async function importOrder(m,rows,file){
@@ -1214,6 +1230,7 @@ async function teamAction(act){
     if (S.db){ recUndo("empsales",id); try{ await S.db.doc("empsales/"+id).set(doc); S.empsales[id]=doc; shared=true; }catch(e){ UNDO.pop(); } }
     if (!shared){ S.empLocal[id]=doc; try{ localStorage.setItem("7g-emp",JSON.stringify(S.empLocal)); }catch(e){} }
     else if (S.empLocal[id]){ delete S.empLocal[id]; try{ localStorage.setItem("7g-emp",JSON.stringify(S.empLocal)); }catch(e){} }
+    if (shared) notifyAdmin(["Staff sales saved","تم حفظ مبيعات موظف"],[`${S.teamEmp} · ${shiftName(S.teamShift)} · ${nf0.format(tt.tot)} SAR`,`${S.teamEmp} · ${shiftName(S.teamShift)} · ${nf0.format(tt.tot)} ر.س`],b);
     render(true); toast(T(shared?"تم حفظ المبيعات.":"تم الحفظ على هذا الجهاز فقط. انسخ النتيجة وأرسلها للمدير.")); return; }
   if (act==="dlTeam"){ if(!S.dl||typeof XLSX==="undefined") return; const docs=Object.values(allEmp()).filter(d=>d&&d.branch===b&&String(d.date).slice(0,7)===S.month).sort((x,y)=>x.date<y.date?-1:1);
     if(!docs.length){ toast(T("لا توجد بيانات للتنزيل.")); return; }
@@ -1365,6 +1382,32 @@ const statusPill = st => !st.started ? `<span class="pill mute">${T("لم يُن
 const okHtml = () => `<span class="okm">✓ ${T("القراءة صحيحة")}</span>`;
 const fieldOk = (v,is) => v!=null&&v!==""&&v!=="NA"&&!is;
 const issueHtml = x => x ? `<b>${esc(L(x.msg))}</b>${x.sol?`<span>${T("الحل")}: ${esc(L(x.sol))}</span>`:""}` : "";
+/* ---------- notifications ----------
+   staff actions -> "notify" docs -> admin (live in the app + phone push by the GitHub job)
+   6:00 and 18:00 reminders to staff come from the same job (.github/workflows/notify.yml) */
+function notifyAdmin(title,body,branch){
+  if (isAdmin()||!S.db) return; const me=S.me||{};
+  S.db.collection("notify").add({email:S.email,name:String(me.name||S.email).slice(0,60),branch:branch||selBranch()||"",title,body,at:Date.now(),day:todayKey,sent:false}).catch(()=>{});
+}
+const pushOk = () => typeof Notification!=="undefined" && "serviceWorker" in navigator;
+const pushOn = () => pushOk() && Notification.permission==="granted";
+async function showLocal(title,body){
+  if (pushOn()){ try{ const reg=await navigator.serviceWorker.ready; await reg.showNotification(title,{body,icon:"icon-192.png",badge:"icon-192.png"}); return; }catch(e){} }
+  toast(title+" · "+body);
+}
+async function registerPush(silent){
+  if (!pushOk()){ if(!silent) toast(T("هذا الجهاز ما يدعم الإشعارات. في الآيفون أضف التطبيق للشاشة الرئيسية وافتحه منها.")); return; }
+  if (!silent){ const p=await Notification.requestPermission(); if(p!=="granted"){ toast(T("الإشعارات مرفوضة. فعّلها من إعدادات الجوال لهذا التطبيق.")); render(true); return; } }
+  else if (Notification.permission!=="granted") return;
+  const key=window.FCM_VAPID_KEY||""; let token="";
+  if (key && firebase.messaging && S.db){ try{ const reg=await navigator.serviceWorker.ready; token=await firebase.messaging().getToken({vapidKey:key,serviceWorkerRegistration:reg});
+      if (token) await S.db.doc("push/"+bid(token)).set({token,email:S.email,admin:!!S.admin,branch:S.admin?"":(myBranch()||""),lang:LANG,at:Date.now()}); }catch(e){ token=""; } }
+  if (!silent){ render(true); toast(T(token?"تم تفعيل الإشعارات على هذا الجهاز.":"تم تفعيل الإشعارات داخل التطبيق. إشعارات الجوال وهو مقفول تشتغل بعد إكمال إعداد Firebase.")); }
+}
+function pushCard(){
+  if (!pushOk() || Notification.permission==="granted") return "";
+  return `<div class="card soft"><div class="row" style="justify-content:space-between"><div><b>${T("فعّل الإشعارات")}</b><div class="note">${T(isAdmin()?"يوصلك إشعار بكل شي يسويه الموظفين.":"يوصلك تذكير بالمهام الساعة 6 الصبح و6 المغرب.")}</div></div><button class="btn pri" data-act="enablePush">${T("تفعيل")}</button></div></div>`;
+}
 /* unsaved task drafts: kept on the device until the task is saved */
 let DRAFTS={}; try{ DRAFTS=JSON.parse(localStorage.getItem("7g-drafts")||"{}")||{}; }catch(e){ DRAFTS={}; }
 let draftT=null;
@@ -1391,7 +1434,7 @@ function openTask(b,id){ if(id==="inv") return openInv(b); const def=defById(id)
     S.db.doc("taskpics/"+tid).get().then(sn=>{ if(S.taskDraft!==dr||!sn.exists) return; const pp=(sn.data()||{}).photos||{}; dr.photos=Object.assign({},pp,dr.photos); render(true); }).catch(()=>{}); } }
 function vTasks(){
   const a=isAdmin(), b=selBranch(), docs=allTasks();
-  let h=`<h1>${T("المهام اليومية")}</h1><p class="sub">${T("مهام كل شفت داخل الفرع، مع تنبيه فوري لأي قراءة غير صحيحة وحلها")}${b?" · "+esc(b):""}</p><div class="stack">`;
+  let h=`<h1>${T("المهام اليومية")}</h1><p class="sub">${T("مهام كل شفت داخل الفرع، مع تنبيه فوري لأي قراءة غير صحيحة وحلها")}${b?" · "+esc(b):""}</p><div class="stack">`+pushCard();
   h+=`<div class="card"><div class="row" style="align-items:flex-end"><div class="field" style="flex:0 1 250px"><label for="tmDate">${T("التاريخ")}</label>${dateSel("tmDate",S.teamDate,"",now.getFullYear()-2,now.getFullYear()+1)}</div>
     <div><div class="note" style="margin-bottom:4px">${T("الشفت")}</div><div class="seg">${SHIFTS.map(([k,t])=>`<button data-tshift="${k}" class="${S.teamShift===k?"on":""}">${T(t)}</button>`).join("")}</div></div>${a&&S.dl?`<button class="btn" data-act="dlTasks">${T("تنزيل سجل المهام Excel")}</button>`:""}</div></div>`;
   const defs=shiftTasks(S.teamShift);
@@ -1462,7 +1505,7 @@ async function taskAction(act){
     const cut=new Date(Date.now()-2*864e5).toISOString().slice(0,10); Object.keys(S.taskLocal).forEach(k=>{ if(S.taskLocal[k].date<cut) delete S.taskLocal[k].photos; });
     try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }
     catch(e){ Object.keys(S.taskLocal).forEach(k=>{ if(k!==id) delete S.taskLocal[k].photos; }); try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e2){ if(S.taskLocal[id]) delete S.taskLocal[id].photos; try{ localStorage.setItem("7g-tasks",JSON.stringify(S.taskLocal)); }catch(e3){} } }
-    dropDraft(id);
+    dropDraft(id); if (shared) notifyAdmin(["Task saved","تم حفظ مهمة"],[(Array.isArray(def.title)?def.title[0]:def.title)+(st.issues?` · ${st.issues} issue(s)`:" · OK"),(Array.isArray(def.title)?def.title[1]:def.title)+(st.issues?` · ${st.issues} ملاحظة`:" · سليمة")],b);
     if (picsFail){ S.taskOpen=null; S.taskDraft=null; render(true); toast(T("تم الحفظ بدون الصور لأن مساحة التخزين امتلأت.")); return; }
     S.taskOpen=null; S.taskDraft=null; render(true);
     toast(T(st.issues?(shared?"تم الحفظ. فيه {n} ملاحظة تحتاج معالجة.":"تم الحفظ على هذا الجهاز فقط، وفيه {n} ملاحظة. انسخ النتيجة وأرسلها للمدير."):(shared?"تم حفظ المهمة.":"تم الحفظ على هذا الجهاز فقط. انسخ النتيجة وأرسلها للمدير."),{n:st.issues})); }
@@ -1738,7 +1781,7 @@ const customTasks = () => Array.isArray(S.settings.customTasks) ? S.settings.cus
 const weekdayOf = d => { const p=String(d).split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).getDay(); };
 function allTaskDefs(sh,date){
   const out=TASK_DEFS.filter(d=>!d.shift||d.shift===sh);
-  out.push({id:"inv",type:"inv",title:["Daily inventory","الجرد اليومي"],code:sh==="m"?T("الصباح يبدأ الجرد"):T("الليل يقفل الجرد")});
+  out.push({id:"inv",type:"inv",title:["Daily inventory","الجرد اليومي"],code:T("جرد كامل للشفت ويقفله")});
   const wd=weekdayOf(date);
   if (wd===weeklyDay()){ const items=weeklyList().filter(x=>(x.s||"m")===sh||x.s==="b").map(x=>biName(x.n,wkEn(x))); if(items.length) out.push({id:"weekly",type:"check",items,photoEach:true,title:["Weekly tasks","المهام الأسبوعية"],code:L(DAYS[wd])}); }
   customTasks().forEach(c=>{ if(!(c.s==="b"||c.s===sh)) return; if(c.f==="w"&&+c.d!==wd) return; if(!(c.items||[]).length) return;
@@ -1749,36 +1792,43 @@ const defById = (id,sh,date) => allTaskDefs(sh||S.teamShift,date||S.teamDate).fi
 /* inventory */
 const invId = (date,b) => date+"_"+bid(b);
 const invNum = v => { if(v==null||v==="") return null; const n=toNum(v); return n==null?null:n; };
-function prevInv(b,date){ const ds=Object.values(S.invent||{}).filter(d=>d&&d.branch===b&&d.date<date&&d.n).sort((x,y)=>x.date<y.date?1:-1); return ds[0]||null; }
-function invCalc(doc,item,draft,sh){
-  const m=((doc&&doc.m&&doc.m.rows)||{})[item.n]||{}, n=((doc&&doc.n&&doc.n.rows)||{})[item.n]||{}, dr=(draft||{})[item.n]||{};
-  const pick=(src,k,own)=>own&&dr[k]!==undefined?dr[k]:src[k];
-  const o=invNum(pick(m,"o",sh==="m")), r=invNum(pick(m,"r",sh==="m")), ti=invNum(pick(m,"ti",sh==="m")), to=invNum(pick(n,"to",sh==="n")), w=invNum(pick(n,"w",sh==="n")), e=invNum(pick(n,"e",sh==="n")), s=invNum(pick(n,"s",sh==="n"));
-  const tin=(o||0)+(r||0)+(ti||0), tout=(to||0)+(w||0), cons=e==null?null:tin-tout-e, vr=cons==null||s==null?null:cons-s;
-  const pr=(priceList().find(x=>canonKey(x.n)===canonKey(item.n))||{}).p;
-  return {o,r,ti,to,w,e,s,tin,tout,cons,vr,sr:vr!=null&&pr?vr*pr:null};
+/* every shift does a full count of its own and must close it.
+   opening: morning = last night's closing (or the last closed shift before), night = this morning's closing */
+function prevClose(b,date,sh){
+  const cur=(S.invent||{})[invId(date,b)];
+  if (sh==="n" && cur && cur.m && cur.m.closed) return {doc:cur,sh:"m"};
+  const ds=Object.values(S.invent||{}).filter(d=>d&&d.branch===b&&d.date<date&&((d.n&&d.n.closed)||(d.m&&d.m.closed))).sort((x,y)=>x.date<y.date?1:-1);
+  if (!ds[0]) return null; return {doc:ds[0],sh:ds[0].n&&ds[0].n.closed?"n":"m"};
 }
-function invStatus(b,date,sh){ const doc=(S.invent||{})[invId(date,b)]; if(!doc||!doc[sh]) return {done:false,issues:0,filled:0,total:1,started:false};
-  const it=invItems(), k=sh==="m"?"o":"e", rows=doc[sh].rows||{}, filled=it.filter(x=>rows[x.n]&&rows[x.n][k]!==""&&rows[x.n][k]!=null).length;
-  let issues=0; if(sh==="n") it.forEach(x=>{ const c=invCalc(doc,x,null,""); if(c.vr!=null&&Math.abs(c.vr)>0.001) issues++; });
-  return {done:filled>=it.length,issues,filled,total:it.length,started:true}; }
+function invCalc(doc,item,draft,sh){
+  const src=((doc&&doc[sh]&&doc[sh].rows)||{})[item.n]||{}, dr=(draft||{})[item.n];
+  const g=k=>invNum(dr&&dr[k]!==undefined?dr[k]:src[k]);
+  const o=g("o"), r=g("r"), ti=g("ti"), to=g("to"), w=g("w"), e=g("e"), sl=g("s");
+  const tin=(o||0)+(r||0)+(ti||0), tout=(to||0)+(w||0), cons=e==null?null:tin-tout-e, vr=cons==null||sl==null?null:cons-sl;
+  const pr=(priceList().find(x=>canonKey(x.n)===canonKey(item.n))||{}).p;
+  return {o,r,ti,to,w,e,s:sl,tin,tout,cons,vr,sr:vr!=null&&pr?vr*pr:null};
+}
+function invStatus(b,date,sh){ const doc=(S.invent||{})[invId(date,b)], x=doc&&doc[sh]; if(!x) return {done:false,issues:0,filled:0,total:1,started:false};
+  const it=invItems(), rows=x.rows||{}, filled=it.filter(i=>rows[i.n]&&rows[i.n].e!==""&&rows[i.n].e!=null).length;
+  let issues=0; it.forEach(i=>{ const c=invCalc(doc,i,null,sh); if(c.vr!=null&&Math.abs(c.vr)>0.001) issues++; });
+  return {done:!!x.closed&&filled>=it.length,issues,filled,total:it.length,started:true}; }
 function openInv(b){ const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, rows=clone(((doc&&doc[sh])||{}).rows||{});
-  if (sh==="m"&&!(doc&&doc.m)){ const pv=prevInv(b,S.teamDate); if(pv) invItems().forEach(x=>{ const c=invCalc(pv,x,null,""); if(c.e!=null) rows[x.n]=Object.assign({o:String(c.e)},rows[x.n]); }); }
+  if (!(doc&&doc[sh])){ const pv=prevClose(b,S.teamDate,sh); if(pv) invItems().forEach(x=>{ const c=invCalc(pv.doc,x,null,pv.sh); if(c.e!=null) rows[x.n]=Object.assign({o:String(c.e)},rows[x.n]); }); }
   const dd=DRAFTS[invDraftKey(b,S.teamDate,sh)];
   S.taskOpen="inv"; S.invDraft=dd&&dd.inv?clone(dd.inv):rows; S.taskDraft={by:(dd&&dd.by)||((doc&&doc[sh])||{}).by||S.taskBy||"",vals:{},notes:{},photos:{}}; render(true); window.scrollTo(0,0); }
 function vInv(b){
   const doc=(S.invent||{})[invId(S.teamDate,b)], sh=S.teamShift, dr=S.invDraft||{}, a=isAdmin();
-  const cols=[["o","افتتاحي","m"],["r","مستلم","m"],["ti","تحويل وارد +","m"],["tin","إجمالي الوارد",""],["to","تحويل صادر -","n"],["w","تالف","n"],["tout","إجمالي الصادر",""],["e","الجرد النهائي","n"],["cons","الاستهلاك",""],["s","المباع (POS)","n"],["vr","الفرق",""],["sr","ر.س",""]];
-  const sec=(k,t)=>{ const x=doc&&doc[k]; return `<div class="row" style="gap:6px"><span class="pill ${x?"good":"mute"}">${T(t)}</span><span class="note">${x?T("بواسطة {n} · {t}",{n:esc(x.by||""),t:N(esc(x.time||""))}):T("لم يُنجز")}</span></div>`; };
+  const cols=[["o","افتتاحي",sh],["r","مستلم",sh],["ti","تحويل وارد +",sh],["tin","إجمالي الوارد",""],["to","تحويل صادر -",sh],["w","تالف",sh],["tout","إجمالي الصادر",""],["e","الجرد النهائي",sh],["cons","الاستهلاك",""],["s","المباع (POS)",sh],["vr","الفرق",""],["sr","ر.س",""]];
+  const sec=(k,t)=>{ const x=doc&&doc[k]; return `<div class="row" style="gap:6px"><span class="pill ${x&&x.closed?"good":"mute"}">${T(t)}</span><span class="note">${x&&x.closed?T("مقفول بواسطة {n} · {t}",{n:esc(x.by||""),t:N(esc(x.time||""))}):T("لم يُقفل")}</span></div>`; };
   let h=`<div class="card"><div class="card-h"><h2>${T("الجرد اليومي")} · <span class="num">${esc(S.teamDate)}</span></h2><button class="btn sm" data-act="backTasks">${T("رجوع للمهام")}</button></div>
-    <div class="stack" style="gap:6px;margin-bottom:10px">${sec("m","شفت الصباح بدأ الجرد")}${sec("n","شفت الليل قفل الجرد")}</div>
-    <p class="note" style="margin:0 0 10px">${T(sh==="m"?"شفت الصباح يعبّي: الافتتاحي والمستلم والتحويل الوارد. الافتتاحي ينحط تلقائياً من جرد إغلاق أمس.":"شفت الليل يعبّي: التحويل الصادر والتالف والجرد النهائي والمباع، والتطبيق يحسب الاستهلاك والفرق.")}</p>
+    <div class="stack" style="gap:6px;margin-bottom:10px">${sec("m","جرد شفت الصباح")}${sec("n","جرد شفت الليل")}</div>
+    <p class="note" style="margin:0 0 10px">${T(sh==="m"?"كل شفت يسوي جرد كامل لحاله ويقفله. الافتتاحي ينحط تلقائياً من آخر جرد مقفول (جرد ليل أمس).":"كل شفت يسوي جرد كامل لحاله ويقفله. الافتتاحي ينحط تلقائياً من الجرد النهائي لشفت الصباح.")}</p>
     <div class="field" style="max-width:320px;margin-bottom:10px"><label for="tkBy">${T("تم بواسطة")}</label><input id="tkBy" value="${esc(S.taskDraft&&S.taskDraft.by||"")}"></div>
     <div class="tw" style="max-height:70vh;overflow:auto"><table class="ot inv"><thead><tr><th>${T("الصنف")}</th><th>${T("الوحدة")}</th>${cols.map(c=>`<th class="n${c[2]===sh?" own":""}">${T(c[1])}</th>`).join("")}</tr></thead><tbody>${invItems().map((it,i)=>{ const c=invCalc(doc,it,dr,sh);
       return `<tr><td style="white-space:normal;min-width:120px">${esc(it.n)}</td><td class="note">${esc(it.u||"")}</td>${cols.map(([k,t,own])=>{ if(own===sh) return `<td class="n"><input class="sti" style="width:62px" id="iv-${i}-${k}" data-iv="${i}" data-ik="${k}" inputmode="decimal" value="${esc(((dr[it.n]||{})[k])??"")}"></td>`;
         const v=c[k]; const cls=k==="vr"&&v?(v>0?' style="color:var(--bad);font-weight:600"':' style="color:var(--warn);font-weight:600"'):k==="tin"||k==="tout"||k==="cons"?' style="font-weight:600"':"";
         return `<td class="n num" id="iv-${i}-${k}c"${cls}>${v==null?"—":k==="sr"?nf0.format(v):nf2.format(v)}</td>`; }).join("")}</tr>`; }).join("")}</tbody></table></div>
-    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveInv">${T(sh==="m"?"حفظ جرد الصباح":"قفل الجرد")}</button><button class="btn" data-act="copyInv">${T("نسخ النتيجة")}</button>${a&&doc?`<button class="btn" data-act="delInv">${T("حذف")}</button>`:""}</div></div>`;
+    <div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveInv">${T(sh==="m"?"قفل جرد الصباح":"قفل جرد الليل")}</button><button class="btn" data-act="copyInv">${T("نسخ النتيجة")}</button>${a&&doc?`<button class="btn" data-act="delInv">${T("حذف")}</button>`:""}</div></div>`;
   return h;
 }
 document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||t.dataset.iv==null||!S.invDraft) return; const b=selBranch(); if(!b) return;
@@ -1787,13 +1837,15 @@ document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||t.datase
   ["tin","tout","cons","vr","sr"].forEach(k=>{ const el=$("iv-"+t.dataset.iv+"-"+k+"c"); if(el) el.textContent=c[k]==null?"—":k==="sr"?nf0.format(c[k]):nf2.format(c[k]); }); });
 async function invAction(act){
   const b=selBranch(); if(!b||!can("tasks")) return; const id=invId(S.teamDate,b), sh=S.teamShift, cur=(S.invent||{})[id];
-  if (act==="copyInv"){ const doc=cur, lines=[T("الجرد اليومي")+" - "+b+" - "+S.teamDate]; invItems().forEach(it=>{ const c=invCalc(doc,it,S.invDraft,sh); lines.push(it.n+": "+[c.o,c.r,c.ti,c.to,c.w,c.e,c.cons,c.s,c.vr].map(v=>v==null?"-":nf2.format(v)).join(" | ")); });
+  if (act==="copyInv"){ const doc=cur, lines=[T("الجرد اليومي")+" - "+b+" - "+S.teamDate]; lines.push(shiftName(sh)); invItems().forEach(it=>{ const c=invCalc(doc,it,S.invDraft,sh); lines.push(it.n+": "+[c.o,c.r,c.ti,c.to,c.w,c.e,c.cons,c.s,c.vr].map(v=>v==null?"-":nf2.format(v)).join(" | ")); });
     try{ await navigator.clipboard.writeText(lines.join("\n")); toast(T("تم نسخ النتيجة.")); }catch(e){ toast(T("تعذّر النسخ.")); } return; }
   if (act==="saveInv"){ const by=String(S.taskDraft&&S.taskDraft.by||"").trim(); if(!by){ toast(T("اكتب اسمك في خانة «تم بواسطة».")); return; }
     S.taskBy=by; try{ localStorage.setItem("7g-by",by); }catch(e){}
-    const rows={}, keys=sh==="m"?["o","r","ti"]:["to","w","e","s"]; invItems().forEach(it=>{ const r=S.invDraft[it.n]||{}, o={}; keys.forEach(k=>{ if(r[k]!=null&&r[k]!=="") o[k]=String(r[k]).slice(0,20); }); if(Object.keys(o).length) rows[it.n]=o; });
-    const d=new Date(), doc=Object.assign({date:S.teamDate,branch:b},clone(cur||{})); doc.date=S.teamDate; doc.branch=b; doc[sh]={by:by.slice(0,60),time:pad(d.getHours())+":"+pad(d.getMinutes()),rows};
-    if (await save("invent",id,doc)){ dropDraft(invDraftKey(b,S.teamDate,sh)); S.taskOpen=null; S.invDraft=null; render(true); toast(T(sh==="m"?"تم حفظ جرد الصباح.":"تم قفل الجرد.")); } return; }
+    const miss=invItems().filter(it=>{ const r=S.invDraft[it.n]||{}; return r.e==null||String(r.e).trim()===""; }).length;
+    if (miss){ toast(T("باقي {n} صنف بدون جرد نهائي. عبّه (ولو صفر) عشان تقفل الجرد.",{n:N(miss)})); return; }
+    const rows={}, keys=["o","r","ti","to","w","e","s"]; invItems().forEach(it=>{ const r=S.invDraft[it.n]||{}, o={}; keys.forEach(k=>{ if(r[k]!=null&&r[k]!=="") o[k]=String(r[k]).slice(0,20); }); if(Object.keys(o).length) rows[it.n]=o; });
+    const d=new Date(), doc=Object.assign({date:S.teamDate,branch:b},clone(cur||{})); doc.date=S.teamDate; doc.branch=b; doc[sh]={by:by.slice(0,60),time:pad(d.getHours())+":"+pad(d.getMinutes()),rows,closed:true};
+    if (await save("invent",id,doc)){ dropDraft(invDraftKey(b,S.teamDate,sh)); S.taskOpen=null; S.invDraft=null; render(true); toast(T(sh==="m"?"تم قفل جرد الصباح.":"تم قفل جرد الليل.")); notifyAdmin(["Inventory closed","قفل الجرد"],[sh==="m"?"Morning shift":"Night shift",sh==="m"?"شفت الصباح":"شفت الليل"],b); } return; }
 }
 /* admin: weekly tasks, extra tasks, inventory items */
 function taskAdminCard(){
@@ -2257,6 +2309,7 @@ document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]"); if(!b||b.tagName==="INPUT") return;
   const act=b.dataset.act;
   if (act==="dlReport") return downloadReport();
+  if (act==="enablePush") return registerPush(false);
   if (act==="saveEmp"||act==="copyEmp"||act==="dlTeam") return teamAction(act);
   if (act==="saveInv"||act==="copyInv") return invAction(act);
   if (act==="saveTask"||act==="copyTask"||act==="backTasks"||act==="dlTasks") return taskAction(act);
@@ -2415,7 +2468,7 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
     let me=null; try{ const sn=await fs.doc("members/"+email).get(); if(sn.exists) me=sn.data(); }catch(e){}
     const owner=!!email && email===String(window.OWNER_EMAIL||"").trim().toLowerCase();
     if (!me&&!owner){ S.auth="noaccess"; S.ready=true; render(true); return; }
-    S.me=me; S.admin=owner||!!(me&&me.role==="admin"); S.db=fs; S.auth="in"; S.ready=true; S.tab="home"; render(true); setTimeout(()=>{ try{ resumeDraft(); }catch(e){} },1200);
+    S.me=me; S.admin=owner||!!(me&&me.role==="admin"); S.db=fs; S.auth="in"; S.ready=true; S.tab="home"; render(true); setTimeout(()=>{ try{ resumeDraft(); }catch(e){} },1200); setTimeout(()=>{ registerPush(true).catch(()=>{}); },2500);
     const map=q=>{ const o={}; q.docs.forEach(d=>o[d.id]=clone(d.data())); return o; };
     const sub=(ref,cb)=>unsubs.push(ref.onSnapshot(cb,()=>{}));
     sub(fs.doc("settings/main"),sn=>{ if(sn.exists){ const d=clone(sn.data()); d.perms=Object.assign({sales:true,menu:true,waste:true,reviews:true},d.perms); S.settings=d; } render(); });
@@ -2426,6 +2479,8 @@ S.dl={save:async({filename,data})=>{ const blob=data instanceof Blob?data:new Bl
       sub(fs.collection("invent").orderBy("date","desc").limit(600),q=>{ S.invent=map(q); render(); });
       ["menu","menub","sales","waste","reviews","wasteb","orders","stock","staff","members"].forEach(c=>sub(fs.collection(c),q=>{ S[c]=map(q); render(); }));
       sub(fs.collection("comments").orderBy("date","desc").limit(300),q=>{ S.comments=map(q); render(); });
+      { const since=Date.now(); try{ sub(fs.collection("notify").where("at",">",since),q=>{ (q.docChanges?q.docChanges():[]).forEach(ch=>{ if(ch.type!=="added") return; const n=ch.doc.data()||{}; if(!(n.at>since)) return;
+          showLocal(L(n.title||["7 GRAMS","7 GRAMS"])+" · "+(n.branch||""),(n.name||"")+": "+L(n.body||["",""])); }); }); }catch(e){} }
       sub(fs.collection("empsales").orderBy("date","desc").limit(1500),q=>{ S.empsales=map(q); render(); });
       let pruned=false;
       sub(fs.collection("tasklog").orderBy("date","desc").limit(2000),q=>{ S.tasklog=map(q); render();
