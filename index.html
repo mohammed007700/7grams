@@ -95,6 +95,9 @@ td.od.z{color:var(--muted)}
 .tf label{font-size:13px}
 .tf input{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg);width:100%}
 .tf.bad input{border-color:var(--bad);background:var(--bad-soft)}
+.tf.ok input{border-color:var(--good);background:var(--good-soft)}
+.tmsg .okm{color:var(--good);font-weight:600}
+.citem.ok .ct{color:var(--good)}
 .tmsg{font-size:12.5px;color:var(--bad);display:flex;flex-direction:column;gap:2px}
 .tmsg span{color:var(--ink)}
 .citem{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
@@ -489,6 +492,7 @@ const EN = {
 "النسبة = التالف ÷ المستلم من نفس المنتج. المنتجات اللي استلامها أقل من {n} حبة ما تدخل في اختيار الأعلى.":"Rate = waste ÷ received of the same product. Products with under {n} pcs received are not picked as the top item.",
 "تم تحليل التوالف لـ {b} فرع لشهر {m}.":"Waste analysed for {b} branches for {m}.",
 "غير محفوظ":"Not saved",
+"القراءة صحيحة":"Reading OK",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1358,6 +1362,8 @@ function taskStatus(def,doc){
   return {done:filled>=total,issues,filled,total,started:true};
 }
 const statusPill = st => !st.started ? `<span class="pill mute">${T("لم يُنجز")}</span>` : !st.done ? `<span class="pill warn">${T("ناقص")} ${N(st.filled+"/"+st.total)}</span>` : st.issues ? `<span class="pill bad">${T("{n} ملاحظة",{n:N(st.issues)})}</span>` : `<span class="pill good">${T("مكتمل")}</span>`;
+const okHtml = () => `<span class="okm">✓ ${T("القراءة صحيحة")}</span>`;
+const fieldOk = (v,is) => v!=null&&v!==""&&v!=="NA"&&!is;
 const issueHtml = x => x ? `<b>${esc(L(x.msg))}</b>${x.sol?`<span>${T("الحل")}: ${esc(L(x.sol))}</span>`:""}` : "";
 /* unsaved task drafts: kept on the device until the task is saved */
 let DRAFTS={}; try{ DRAFTS=JSON.parse(localStorage.getItem("7g-drafts")||"{}")||{}; }catch(e){ DRAFTS={}; }
@@ -1409,10 +1415,10 @@ function vTasks(){
     <div class="field" style="max-width:320px"><label for="tkBy">${T("تم الفحص بواسطة")}</label><input id="tkBy" value="${esc(dr.by||"")}"></div>`;
   if (def.type==="check"&&!def.photoEach&&!def.photoNone) h+=`<div class="pcap" style="margin-top:12px">${photoCtl(photoUnits(def)[0])}</div>`;
   if (def.type==="check") h+=`<div style="margin-top:8px">${def.items.map((it,i)=>{ if(it.h) return `<div class="tgh">${esc(L(it.h))}</div>`; const v=dr.vals[i];
-      return `<div class="citem${v==="n"?" bad":""}"><div class="ct">${esc(L(it))}</div><div class="seg yn"><button data-yn="${i}:y" class="${v==="y"?"on y":""}">${T("نعم")}</button><button data-yn="${i}:n" class="${v==="n"?"on n":""}">${T("لا")}</button><button data-yn="${i}:na" class="${v==="na"?"on a":""}">${T("لا ينطبق")}</button></div>${def.photoEach&&v!=="na"?`<div class="pcap" style="grid-column:1/-1">${photoCtl({k:"i"+i,label:it})}</div>`:""}${v==="n"?`<div class="tmsg">${issueHtml({msg:["Not done","لم يُنجز"],sol:SOL.check})}</div><input class="cnote" id="cn-${i}" data-cn="${i}" placeholder="${T("اكتب السبب")}" value="${esc(dr.notes[i]||"")}">`:""}</div>`; }).join("")}</div>`;
+      return `<div class="citem${v==="n"?" bad":v==="y"?" ok":""}"><div class="ct">${esc(L(it))}</div><div class="seg yn"><button data-yn="${i}:y" class="${v==="y"?"on y":""}">${T("نعم")}</button><button data-yn="${i}:n" class="${v==="n"?"on n":""}">${T("لا")}</button><button data-yn="${i}:na" class="${v==="na"?"on a":""}">${T("لا ينطبق")}</button></div>${def.photoEach&&v!=="na"?`<div class="pcap" style="grid-column:1/-1">${photoCtl({k:"i"+i,label:it})}</div>`:""}${v==="n"?`<div class="tmsg">${issueHtml({msg:["Not done","لم يُنجز"],sol:SOL.check})}</div><input class="cnote" id="cn-${i}" data-cn="${i}" placeholder="${T("اكتب السبب")}" value="${esc(dr.notes[i]||"")}">`:""}</div>`; }).join("")}</div>`;
   else { let g=null; h+=`<div class="tfg">`; def.fields.forEach(f=>{ const gl=f.g?L(f.g):null; if(gl!==g){ g=gl; if(gl) h+=`<div class="tgh">${esc(gl)}</div><div class="pcap gr">${photoCtl({k:unitOfGroup(f.g),label:f.g})}</div>`; }
       const v=dr.vals[f.k], is=fieldIssue(def,f,v), lm=f.eq?null:limOf(def,f), hint=f.eq?f.eq:f.hint?f.hint:(f.min!=null?lm.min+" - "+lm.max+(f.u?" "+f.u:""):"");
-      h+=`<div class="tf${is?" bad":""}${v==="NA"?" na":""}" id="tf-${f.k}"><label for="tk-${f.k}">${esc(L(f.label))}<button type="button" class="nabtn${v==="NA"?" on":""}" data-na="${f.k}">${T("لا ينطبق")}</button>${hint?` <span class="note">(\u2066${esc(hint)}\u2069)</span>`:""}</label><input id="tk-${f.k}" data-tk="${f.k}" ${f.eq?"":'inputmode="decimal"'} value="${v==null||v==="NA"?"":esc(v)}" ${v==="NA"?"disabled":""}><div class="tmsg" id="tm-${f.k}">${issueHtml(is)}</div>${!f.g&&!f.opt?`<div class="pcap">${photoCtl({k:f.k,label:f.label})}</div>`:""}</div>`; });
+      h+=`<div class="tf${is?" bad":fieldOk(v,is)?" ok":""}${v==="NA"?" na":""}" id="tf-${f.k}"><label for="tk-${f.k}">${esc(L(f.label))}<button type="button" class="nabtn${v==="NA"?" on":""}" data-na="${f.k}">${T("لا ينطبق")}</button>${hint?` <span class="note">(\u2066${esc(hint)}\u2069)</span>`:""}</label><input id="tk-${f.k}" data-tk="${f.k}" ${f.eq?"":'inputmode="decimal"'} value="${v==null||v==="NA"?"":esc(v)}" ${v==="NA"?"disabled":""}><div class="tmsg" id="tm-${f.k}">${fieldOk(v,is)?okHtml():issueHtml(is)}</div>${!f.g&&!f.opt?`<div class="pcap">${photoCtl({k:f.k,label:f.label})}</div>`:""}</div>`; });
     h+=`</div>`; }
   h+=`<div class="row" style="margin-top:14px"><button class="btn pri" data-act="saveTask">${T("حفظ المهمة")}</button><button class="btn" data-act="copyTask">${T("نسخ النتيجة")}</button>${a&&saved?`<button class="btn" data-act="delTask">${T("حذف")}</button>`:""}${saved?`<span class="note">${S.tasklog[id]?"":T("على هذا الجهاز")}</span>`:""}</div></div>`;
   return h+"</div>";
@@ -1429,7 +1435,7 @@ document.addEventListener("input",e=>{ const t=e.target; if(!t.dataset||!S.taskD
   if (t.dataset.tk==null) return;
   const def=defById(S.taskOpen), f=def&&def.fields&&def.fields.find(x=>x.k===t.dataset.tk); if(!f) return;
   const v=t.value.trim(); if(v==="") delete S.taskDraft.vals[f.k]; else S.taskDraft.vals[f.k]=v;
-  const is=fieldIssue(def,f,v), box=$("tf-"+f.k), m=$("tm-"+f.k); if(box) box.classList.toggle("bad",!!is); if(m) m.innerHTML=issueHtml(is); });
+  const is=fieldIssue(def,f,v), box=$("tf-"+f.k), m=$("tm-"+f.k); if(box){ box.classList.toggle("bad",!!is); box.classList.toggle("ok",fieldOk(v,is)); } if(m) m.innerHTML=fieldOk(v,is)?okHtml():issueHtml(is); });
 function taskText(b,def){ const dr=S.taskDraft, st=taskStatus(def,dr), lines=[L(def.title)+" - "+b+" - "+S.teamDate+" - "+shiftName(S.teamShift), T("تم الفحص بواسطة")+": "+(dr.by||"-")];
   if (def.type==="check") def.items.forEach((it,i)=>{ if(it.h) return; const v=dr.vals[i]; lines.push((v==="y"?"✓ ":v==="n"?"✗ ":"- ")+L(it)+(v==="n"&&dr.notes[i]?" ("+dr.notes[i]+")":"")); });
   else def.fields.forEach(f=>{ const v=dr.vals[f.k]; if(v==null||v==="") return; const is=fieldIssue(def,f,v); lines.push((f.g?L(f.g)+" ":"")+L(f.label)+": "+v+(f.u?" "+f.u:"")+(is?" ✗ "+L(is.msg):"")); });
