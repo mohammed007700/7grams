@@ -554,6 +554,7 @@ const EN = {
 "انتقلت الأقسام للشريط الجانبي":"Sections moved to the side menu",
 "الرئيسية والمهام والملفات والتوالف تحت. باقي الأقسام من زر ☰ فوق.":"Home, tasks, files and waste are at the bottom. Everything else is in the ☰ button at the top.",
 "تمام":"Got it",
+"تمت قراءة الملف تلقائياً: {c} خانة ({l}).":"File read automatically: {c} fields ({l}).",
 "أدخل رقم التارقت.":"Enter the target amount.","تم حفظ التارقت.":"Target saved.","التقييم يجب أن يكون بين 1 و 5.":"Rating must be between 1 and 5.","أدخل عدد التقييمات.":"Enter the review count.","تم تحديث التقييم.":"Rating updated.","الرابط يجب أن يبدأ بـ https://":"The link must start with https://","تم حفظ الرابط.":"Link saved."
 };
 let LANG = "ar";
@@ -1648,6 +1649,40 @@ function vProfile(){
   h+=`<div class="card"><div class="field" style="margin-bottom:8px"><label for="empQ">${T("بحث بالاسم أو الرقم")}</label><input id="empQ" value="${esc(S.empQ||"")}"></div>${shown.length?shown.map(e=>{ const al=expAlerts(e); return `<button class="trow" data-emp="${esc(e.id)}"><span class="tt"><b>${esc(e.name||"")}</b><span class="note">${esc(e.title||"")}${" · "+esc(e.branch||T("بدون فرع"))}${e.no?` · <span class="num">#${esc(e.no)}</span>`:""}</span></span>${al.length?`<span class="pill ${al.some(x=>x.d<=30)?"bad":"warn"}">${N(al.length)}</span>`:""}</button>`; }).join(""):`<p class="note" style="margin:0">${T("لا يوجد موظفون مطابقون.")}</p>`}${b&&list.length>shown.length&&!qv?`<div class="row" style="margin-top:12px"><span class="note">${T("يوجد {n} موظف في فروع أخرى أو بدون فرع.",{n:N(list.length-shown.length)})}</span><button class="btn sm" data-br="">${T("عرض كل الفروع")}</button></div>`:""}</div>`;
   return h+"</div>";
 }
+/* reads the employee sheet's headers by itself (Arabic or English, any spelling of hamza/taa marbuta) */
+const EMP_KW=[
+ ["idexp",["انتهاء الهوية","انتهاء الاقامة","تاريخ انتهاء الهوية","تاريخ انتهاء الاقامة","iqama expiry","id expiry","iqama exp","id exp"]],
+ ["passexp",["انتهاء الجواز","تاريخ انتهاء الجواز","passport expiry","passport exp"]],
+ ["hcexp",["انتهاء الشهادة الصحية","انتهاء الشهادة","انتهاء الكرت الصحي","انتهاء البطاقة الصحية","health expiry","health certificate expiry","health card expiry"]],
+ ["cend",["نهاية العقد","انتهاء العقد","contract end","contract expiry"]],
+ ["prob",["نهاية التجربة","انتهاء التجربة","فترة التجربة","probation"]],
+ ["dob",["تاريخ الميلاد","الميلاد","date of birth","birth","dob"]],
+ ["hire",["تاريخ التعيين","تاريخ المباشرة","تاريخ الالتحاق","تاريخ الانضمام","تاريخ الدخول","المباشرة","التعيين","hire date","joining date","join date","start date","hire","joining"]],
+ ["emphone",["جوال الطوارئ","رقم الطوارئ","هاتف الطوارئ","emergency phone","emergency mobile","emergency number"]],
+ ["emname",["جهة اتصال للطوارئ","اسم الطوارئ","الطوارئ","emergency contact","emergency"]],
+ ["mgr",["مدير المنطقة","المشرف","area manager","supervisor","manager"]],
+ ["no",["الرقم الوظيفي","رقم الموظف","كود الموظف","الرقم الوظيفى","employee number","employee no","employee id","emp no","emp id","staff id","staff no","code"]],
+ ["idno",["رقم الهوية","رقم الاقامة","رقم الهوية الاقامة","الهوية","الاقامة","السجل المدني","iqama number","iqama no","national id","id number","id no","iqama"]],
+ ["passno",["رقم الجواز","الجواز","passport number","passport no","passport"]],
+ ["hcno",["رقم الشهادة الصحية","الشهادة الصحية","الكرت الصحي","البطاقة الصحية","health certificate","health card","health"]],
+ ["nat",["الجنسية","nationality"]],
+ ["title",["المسمى الوظيفي","المسمى","الوظيفة","المهنة","job title","position","designation","title","job"]],
+ ["branch",["الفرع","الموقع","branch","store","location"]],
+ ["dept",["الادارة","القسم","department","dept"]],
+ ["company",["الشركة التابع لها","الشركة","المنشاة","company"]],
+ ["sponsor",["الكفيل","sponsor"]],
+ ["status",["حالة الموظف","الحالة","status"]],
+ ["phone",["رقم الجوال","الجوال","جوال","الهاتف","رقم الهاتف","موبايل","mobile","phone"]],
+ ["email",["البريد الالكتروني","البريد","الايميل","ايميل","email","e-mail","mail"]],
+ ["city",["مدينة السكن","المدينة","السكن","city"]],
+ ["name",["اسم الموظف","الاسم الكامل","الاسم","الإسم","full name","employee name","name"]]];
+function autoMapEmp(headers){
+  const H=headers.map(h=>arNorm(h)), used=new Set(), m={};
+  EMP_KW.forEach(([k,kws])=>{ const ks=kws.map(arNorm).filter(Boolean); let bi=-1,bl=0;
+    H.forEach((h,i)=>{ if(used.has(i)||!h) return; ks.forEach(kw=>{ const sc=h===kw?1000+kw.length:h.includes(kw)?kw.length:0; if(sc>bl){ bl=sc; bi=i; } }); });
+    if(bi>=0){ used.add(bi); m["e_"+k]=bi; } else m["e_"+k]=-1; });
+  return m;
+}
 async function importEmployees(m,rows,file){
   let n=0,up=0; const byNo={}, byEmail={};
   Object.keys(S.employees).forEach(k=>{ const e=S.employees[k]; if(e.no) byNo[canonKey(e.no)]=k; if(e.email) byEmail[String(e.email).toLowerCase()]=k; });
@@ -1661,7 +1696,7 @@ async function importEmployees(m,rows,file){
     if(!await save("employees",k,d)) throw shownErr(); n++;
     if(o.no) byNo[canonKey(o.no)]=k; if(o.email) byEmail[o.email]=k; }
   if(!n){ toast(T("لم أجد موظفين في الملف. راجع ربط الأعمدة.")); throw shownErr(); }
-  render(true); toast(T("تم حفظ {n} موظف ({u} تحديث).",{n,u:up}));
+  render(true); toast(T("تم حفظ {n} موظف ({u} تحديث).",{n,u:up})); return {n,up};
 }
 let PDFJS=null;
 function loadPdfJs(){ if(PDFJS) return PDFJS; PDFJS=new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
@@ -2319,7 +2354,10 @@ async function onFile(kind,input){
   if (kind==="sales") openMapper({title:T("استيراد المبيعات"),file:f.name,rows:sh.rows,
     fields:[{key:"date",label:"التاريخ"},{key:"amount",label:"مبلغ المبيعات",req:true},{key:"branch",label:"الفرع"},{key:"orders",label:"عدد الطلبات",rowOpt:"كل صف في الملف طلب واحد"}],
     done:(m,rows)=>importSales(m,rows,f.name)});
-  else if (kind==="empxls"){ EF.forEach(x=>{ PAT["e_"+x.k]=x.re; }); openMapper({title:T("استيراد بيانات الموظفين"),file:f.name,rows:sh.rows,
+  else if (kind==="empxls"){ EF.forEach(x=>{ PAT["e_"+x.k]=x.re; });
+    { const rows=sh.rows, hi=findHeader(rows,EF.map(x=>"e_"+x.k)), hd=(rows[hi]||[]).map(v=>v==null?"":String(v)), am=autoMapEmp(hd);
+      if (am.e_name>=0){ try{ const rs=await importEmployees(am,rows.slice(hi+1),f.name); const got=EF.filter(x=>am["e_"+x.k]>=0).map(x=>L(x.l)); toast(T("تم حفظ {n} موظف ({u} تحديث).",{n:N(rs.n),u:N(rs.up)})+" "+T("تمت قراءة الملف تلقائياً: {c} خانة ({l}).",{c:N(got.length),l:got.join("، ")})); }catch(e){ if(!e||!e.shown) toast(T("حدث خطأ أثناء الاستيراد.")); } return; } }
+    openMapper({title:T("استيراد بيانات الموظفين"),file:f.name,rows:sh.rows,
     fields:EF.map(x=>({key:"e_"+x.k,label:L(x.l),req:!!x.req})),
     done:(m,rows)=>importEmployees(m,rows,f.name)}); }
   else if (kind==="price") openMapper({title:T("استيراد الأسعار"),file:f.name,rows:sh.rows,
